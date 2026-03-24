@@ -1,6 +1,7 @@
 import status from "http-status";
 import { auth } from "../../../lib/auth";
 import AppError from "../../helper/AppError";
+import { tokenUtils } from "../../utils/token";
 
 const loginUser = async (payload : { email: string; password: string }) => {
   try {
@@ -16,7 +17,20 @@ const loginUser = async (payload : { email: string; password: string }) => {
         throw new AppError("User login failed", status.UNAUTHORIZED);
     }
 
-    return data;
+    const payloadForToken = {
+        userId: data.user.id,
+        email: data.user.email,
+        role: data.user.role,
+        plan: data.user.plan,
+    }
+    const accessToken = tokenUtils.createAccessToken(payloadForToken);
+    const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
+
+    return {
+      ...data,
+      accessToken,
+      refreshToken,
+    };
   } catch (error : any) {
     console.log("Login error:", error);
     throw error;
@@ -37,8 +51,22 @@ const registerUser = async (payload : { name: string; email: string; password: s
     if(!data.user){
         throw new AppError("User registration failed", status.BAD_REQUEST);
     }
+
+    const payloadForToken = {
+        userId: data.user.id,
+        email: data.user.email,
+        role: data.user.role,
+        plan: data.user.plan,
+    }
+    const accessToken = tokenUtils.createAccessToken(payloadForToken);
+    const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
+
+    return {
+      ...data,
+      accessToken,
+      refreshToken,
+    };
     
-    return data;
   } catch (error : any) {
     console.log("Registration error:", error);
     throw error;

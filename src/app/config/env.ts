@@ -5,6 +5,9 @@ interface envVars  {
   FRONTEND_URL: string;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  JWT_SECRET: string;
+  ACCESS_TOKEN_EXPIRES_IN: string;
+  REFRESH_TOKEN_EXPIRES_IN: string;
 }
 
 
@@ -15,7 +18,10 @@ const loadEnvs = () => {
         'NODE_ENV',
         'FRONTEND_URL',
         'BETTER_AUTH_SECRET',
-        'BETTER_AUTH_URL'
+        'BETTER_AUTH_URL',
+        'ACCESS_TOKEN_EXPIRES_IN',
+        'REFRESH_TOKEN_EXPIRES_IN',
+        'JWT_SECRET'
     ];
 
     envs.forEach(env => {
@@ -31,6 +37,9 @@ const loadEnvs = () => {
         FRONTEND_URL: process.env.FRONTEND_URL as string,
         BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET as string,
         BETTER_AUTH_URL: process.env.BETTER_AUTH_URL as string,
+        ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
+        REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
+        JWT_SECRET: process.env.JWT_SECRET as string,
     };
 }
 
