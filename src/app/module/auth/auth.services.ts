@@ -2,6 +2,10 @@ import status from "http-status";
 import { auth } from "../../../lib/auth";
 import AppError from "../../helper/AppError";
 import { tokenUtils } from "../../utils/token";
+import { prisma } from "../../../lib/prisma";
+import { jwtUtils } from "../../utils/jwt";
+import { envVars } from "../../config/env";
+import { JwtPayload } from "jsonwebtoken";
 
 const loginUser = async (payload : { email: string; password: string }) => {
   try {
@@ -73,7 +77,68 @@ const registerUser = async (payload : { name: string; email: string; password: s
   }
 }
 
+const getNewTokens = async ( refreshToken: string ,sessionToken : string) => {
+  const currentSessionToken = await prisma.session.findUnique({
+    where : {
+      token : sessionToken
+    },
+    include : {
+      user : true
+    }
+  });
+
+  if(!currentSessionToken){
+    throw new AppError("Invalid session token", status.UNAUTHORIZED);
+  }
+
+  const verifyRefreshToken = jwtUtils.verifyToken(refreshToken,envVars.JWT_SECRET);
+
+  if(!verifyRefreshToken.success){
+    throw new AppError("Invalid refresh token", status.UNAUTHORIZED);
+  }
+
+  const verifyRefreshTokenData = verifyRefreshToken.data as JwtPayload;
+
+  if(currentSessionToken.userId !== verifyRefreshTokenData.userId){
+    throw new AppError("Invalid refresh token", status.UNAUTHORIZED);
+  }
+
+  const newAccessToken = tokenUtils.createAccessToken(verifyRefreshTokenData);
+  const newRefreshToken = tokenUtils.createRefreshToken(verifyRefreshTokenData);
+
+
+  const {token} = await prisma.session.update({
+    where : {
+      token : sessionToken
+    },
+    data : {
+      expiresAt : new Date(Date.now() + 60 * 60 *  24 * 1000), // Extend session for another 24 hours
+      updatedAt : new Date(),
+    }
+  })
+
+  return {
+    accessToken : newAccessToken,
+    refreshToken : newRefreshToken,
+    sessionToken : token
+  }
+
+}
+
+const logoutUser = async (sessionToken : string) => {
+  const result = await auth.api.signOut({
+    headers : new Headers({
+      Authorization: `Bearer ${sessionToken}`,
+    }),
+  });
+
+  return result;
+}
+
+
 export const authService = {
     loginUser,
-    registerUser
+    registerUser,
+    getNewTokens,
+    logoutUser
 }

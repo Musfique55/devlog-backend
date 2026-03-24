@@ -14,6 +14,7 @@ export function globalErrorHandler(err : any, req : Request, res : Response, nex
         const zodError = zodErrorHelper(err);
         statusCode = zodError.statusCode;
         message = zodError.message;
+        errors = zodError.errors;
     }else if(err instanceof AppError){
         statusCode = err.statusCode;
         message = err.message;

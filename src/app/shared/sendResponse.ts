@@ -4,7 +4,7 @@ interface IResponse <t>{
     statusCode : number,
     message : string,
     status : boolean,
-    data : t,
+    data? : t,
     meta? : any
 }
 
