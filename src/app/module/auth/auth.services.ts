@@ -87,6 +87,7 @@ const getNewTokens = async ( refreshToken: string ,sessionToken : string) => {
     }
   });
 
+
   if(!currentSessionToken){
     throw new AppError("Invalid session token", status.UNAUTHORIZED);
   }
@@ -103,8 +104,16 @@ const getNewTokens = async ( refreshToken: string ,sessionToken : string) => {
     throw new AppError("Invalid refresh token", status.UNAUTHORIZED);
   }
 
-  const newAccessToken = tokenUtils.createAccessToken(verifyRefreshTokenData);
-  const newRefreshToken = tokenUtils.createRefreshToken(verifyRefreshTokenData);
+  const payloadForToken = {
+    userId: verifyRefreshTokenData.userId,
+    email: verifyRefreshTokenData.email,
+    role: verifyRefreshTokenData.role,
+    plan: verifyRefreshTokenData.plan,
+  }
+
+
+  const newAccessToken = tokenUtils.createAccessToken(payloadForToken);
+  const newRefreshToken = tokenUtils.createRefreshToken(payloadForToken);
 
 
   const {token} = await prisma.session.update({

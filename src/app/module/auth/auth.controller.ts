@@ -38,9 +38,11 @@ const getNewTokens = catchAsync(async (req : Request, res : Response) => {
     const refreshToken = req.cookies.refreshToken;
     const sessionToken = req.cookies["better-auth.session_token"];
     const data = await authService.getNewTokens(refreshToken, sessionToken);
+
     tokenUtils.setAccessTokenCookie(res, data.accessToken);
     tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
     tokenUtils.setBetterAuthTokenCookie(res, data.sessionToken);
+    
     sendResponse(res, {
         statusCode : status.OK,
         message : "New tokens generated successfully",
