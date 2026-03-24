@@ -1,0 +1,8 @@
+-- CreateEnum
+CREATE TYPE "APP_ROLE" AS ENUM ('USER', 'SUPER_ADMIN');
+
+-- CreateEnum
+CREATE TYPE "TEAM_ROLE" AS ENUM ('MEMBER', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "PLAN" AS ENUM ('FREE', 'PRO');
