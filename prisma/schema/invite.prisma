@@ -1,0 +1,21 @@
+model Invite {
+    id String @id @default(uuid())
+    email String 
+    token String
+    workspaceId String
+    status  InviteStatus @default(PENDING)
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+}
+
+enum InviteStatus {
+    PENDING
+    ACCEPTED
+    EXPIRED
+    REJECTED
+}
+
+
+

@@ -11,7 +11,8 @@
     "start": "node dist/app/server.js",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "seed:admin": "tsx src/app/scripts/admin.ts"
   },
   "keywords": [],
   "author": "",

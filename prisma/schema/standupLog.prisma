@@ -1,0 +1,13 @@
+model StandupLog{
+    id          String   @id @default(uuid())
+    workspaceId String?
+    userId      String
+    role        TEAM_ROLE   @default(MEMBER)
+    todayWork  String
+    tomorrowWork  String
+    blocker     String?
+    projectTag  String?
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}

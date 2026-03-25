@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { APP_ROLE } from "../../generated/prisma/enums";
+import { APP_ROLE, TEAM_ROLE } from "../../generated/prisma/enums";
 import { cookieUtils } from "../utils/cookie";
 import AppError from "../helper/AppError";
 import status from "http-status";

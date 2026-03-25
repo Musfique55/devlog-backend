@@ -15,7 +15,7 @@ const loginUser = catchAsync(async (req : Request, res : Response) => {
     sendResponse(res, {
         statusCode : status.OK,
         message : "User logged in successfully",
-        status : true,
+        success : true,
         data,
     });
 });
@@ -29,7 +29,7 @@ const registerUser = catchAsync(async (req : Request, res : Response) => {
     sendResponse(res, {
         statusCode : status.CREATED,
         message : "User registered successfully",
-        status : true,
+        success : true,
         data,
     });
 });
@@ -46,7 +46,7 @@ const getNewTokens = catchAsync(async (req : Request, res : Response) => {
     sendResponse(res, {
         statusCode : status.OK,
         message : "New tokens generated successfully",
-        status : true,
+        success : true,
         data,
     });
  });
@@ -62,7 +62,7 @@ const getNewTokens = catchAsync(async (req : Request, res : Response) => {
     sendResponse(res, {
         statusCode : status.OK,
         message : "User logged out successfully",
-        status : true,
+        success : true,
     });
  });
 
