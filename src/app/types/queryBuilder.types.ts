@@ -5,25 +5,11 @@ export interface PrismaFindManyArgs{
     take? : number
     orderBy? : Record<string,any>
     cursor? : Record<string,any>
+    select?: Record<string,any>
     distinct? : string | string[]
     [key : string] : unknown
 }
 
-export interface PrismaCountQueryArgs{
-    where? : Record<string,any>
-    include? : Record<string,any>
-    skip? : number
-    take? : number
-    orderBy? : Record<string,any>
-    cursor? : Record<string,any>
-    distinct? : string | string[]
-    [key : string] : unknown
-}
-
-export interface IPrismaModelDelegate{
-    findMany(args : any) : Promise<any[]>
-    count(args : any) : Promise<number>
-}
 
 export interface IQueryParams {
     searchTerm ? : string
@@ -36,19 +22,5 @@ export interface IQueryParams {
     [key : string] : string
 }
 
-export interface IConfigs{
-    filterableFields : string[]
-    sortableFields : string[]
-    searchableFields : string[]
-}
 
-export interface IQueryResult <t>{
-    data : t[],
-    meta : {
-        page : number,
-        limit : number,
-        total : number,
-        totalPage : number
-    }
-}
 

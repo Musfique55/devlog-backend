@@ -10,8 +10,8 @@ router.post("/",checkAuth(APP_ROLE.SUPER_ADMIN,APP_ROLE.USER),StandupLogControll
 router.patch("/:id",checkAuth(APP_ROLE.USER),StandupLogController.updateLog);
 router.delete("/:id",checkAuth(APP_ROLE.USER),StandupLogController.deleteLog);
 router.get("/:id",checkAuth(APP_ROLE.USER),StandupLogController.getLogById);
-router.get("/",checkAuth(APP_ROLE.USER),StandupLogController.getLogs);
+router.get("/",StandupLogController.getLogs);
 router.get("/workspace/:workspaceId",checkAuth(APP_ROLE.USER),teamAuth(TEAM_ROLE.ADMIN),StandupLogController.getLogsByWorkspaceId);
 router.get("/blocker/:blocker",checkAuth(APP_ROLE.USER),teamAuth(TEAM_ROLE.ADMIN),StandupLogController.getAllBlockerLogs);
 
-export const standupLogRouter = router;
+export const standupLogRoutes = router;

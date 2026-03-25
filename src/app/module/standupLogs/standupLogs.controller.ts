@@ -51,7 +51,7 @@ const getLogById = catchAsync(async (req: Request, res: Response) => {
 
 const getLogs = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const result = await StandupLogServices.getLogs(userId as string);
+  const result = await StandupLogServices.getLogs(req.query,userId as string);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
