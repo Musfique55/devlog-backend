@@ -13,6 +13,10 @@ interface envVars  {
     ADMIN_EMAIL: string;
     ADMIN_PASSWORD: string;
   }
+  EMAIL_SENDER_SMTP_USER: string;
+  EMAIL_SENDER_SMTP_PASSWORD: string;
+  EMAIL_SENDER_SMTP_HOST: string;
+  EMAIL_SENDER_SMTP_PORT: string;
 }
 
 
@@ -30,6 +34,10 @@ const loadEnvs = () => {
         'ADMIN_USERNAME',
         'ADMIN_EMAIL',
         'ADMIN_PASSWORD',
+        'EMAIL_SENDER_SMTP_USER',
+        'EMAIL_SENDER_SMTP_PASSWORD',
+        'EMAIL_SENDER_SMTP_HOST',
+        'EMAIL_SENDER_SMTP_PORT',
     ];
 
     envs.forEach(env => {
@@ -52,7 +60,11 @@ const loadEnvs = () => {
             ADMIN_USERNAME: process.env.ADMIN_USERNAME as string,
             ADMIN_EMAIL: process.env.ADMIN_EMAIL as string,
             ADMIN_PASSWORD: process.env.ADMIN_PASSWORD as string,
-        }
+        },
+        EMAIL_SENDER_SMTP_USER: process.env.EMAIL_SENDER_SMTP_USER as string,
+        EMAIL_SENDER_SMTP_PASSWORD: process.env.EMAIL_SENDER_SMTP_PASSWORD as string,
+        EMAIL_SENDER_SMTP_HOST: process.env.EMAIL_SENDER_SMTP_HOST as string,
+        EMAIL_SENDER_SMTP_PORT: process.env.EMAIL_SENDER_SMTP_PORT as string,
     };
 }
 

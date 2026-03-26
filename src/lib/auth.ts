@@ -28,6 +28,7 @@ export const auth = betterAuth({
     },
     plugins : [
         bearer(),
+        
     ],
     session : {
         expiresIn : 60 * 60 * 24, // 24 hours
@@ -58,8 +59,5 @@ export const auth = betterAuth({
              }
         }
     }
-    // emailVerification : {
-    //  sendOnSignUp : true,
-     
-    // }
+    
 });

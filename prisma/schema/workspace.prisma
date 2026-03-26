@@ -8,6 +8,7 @@ model Workspace {
    adminId     String
     admin       User     @relation(fields: [adminId], references: [id])
     members     WorkspaceMember[]
+    invites     Invite[]
     
    @@map("workspace")
    @@index([adminId])

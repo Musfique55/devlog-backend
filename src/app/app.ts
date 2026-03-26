@@ -11,12 +11,20 @@ import { notFound } from './middleware/notFound';
 dotenv.config();
 
 const app = express();
+
+app.set("view engine", "ejs");
+app.set("views", "./views");
+
 app.use(cors());
 
 app.use("/api/auth", toNodeHandler(auth));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+
+
+
 
 app.get('/', (req, res) => {
   res.send('Hello World!');

@@ -3,6 +3,7 @@ import { catchAsync } from "../../shared/catchAsync";
 import { StandupLogServices } from "./standupLogs.services";
 import { sendResponse } from "../../shared/sendResponse";
 import status from "http-status";
+import { IQueryParams } from "../../types/queryBuilder.types";
 
 const createLog = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -51,34 +52,37 @@ const getLogById = catchAsync(async (req: Request, res: Response) => {
 
 const getLogs = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const result = await StandupLogServices.getLogs(req.query,userId as string);
+  const result = await StandupLogServices.getLogs(req.query as IQueryParams,userId as string);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Logs fetched successfully",
-    data: result,
+    data: result.data,
+    meta : result.meta
   });
 });
 
 const getLogsByWorkspaceId = catchAsync(async (req: Request, res: Response) => {
   const workspaceId = req.params.workspaceId as string;
-  const result = await StandupLogServices.getLogsByWorkspaceId(workspaceId);
+  const result = await StandupLogServices.getLogsByWorkspaceId(req.query as IQueryParams,workspaceId);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Logs fetched successfully",
-    data: result,
+    data: result.data,
+    meta : result.meta
   });
 });
 
 const getAllBlockerLogs = catchAsync(async (req: Request, res: Response) => {
   const blocker = req.params.blocker as string;
-  const result = await StandupLogServices.getAllBlockerLogs(blocker);
+  const result = await StandupLogServices.getAllBlockerLogs(req.query as IQueryParams,blocker);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Logs fetched successfully",
-    data: result,
+    data: result.data,
+    meta : result.meta
   });
 });
 
