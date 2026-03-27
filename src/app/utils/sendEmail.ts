@@ -35,7 +35,7 @@ export const sendEmail = async (options: SendEmailOptions) => {
 
         const template = await ejs.renderFile(templatePath,templateData);
 
-        const info = await transporter.sendMail({
+       const info =  await transporter.sendMail({
             to,
             subject,
             html: template,
@@ -48,7 +48,8 @@ export const sendEmail = async (options: SendEmailOptions) => {
             })
         });
 
-        console.log(`email send ${to} ${info.messageId}`);
+
+        return {success : info.accepted.length > 0}
 
     } catch (error : any) {
         console.log(error);

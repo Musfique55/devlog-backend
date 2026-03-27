@@ -13,6 +13,8 @@ model User {
   accounts      Account[]
   workspaces   Workspace[] 
   workspaceMembers       WorkspaceMember[]
+  standupLogs    StandupLogs[]
+
 
 
   @@unique([email])

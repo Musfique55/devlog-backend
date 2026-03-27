@@ -1,14 +1,13 @@
 import { Prisma } from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
-import {
-  IQueryParams,
-} from "../../types/queryBuilder.types";
+import { IQueryParams } from "../../types/queryBuilder.types";
 import { QueryBuilder } from "../../utils/queryBuilder";
-import { ICreateLogs } from "./standupLogs.types";
+import { sendEmail } from "../../utils/sendEmail";
+import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
 
 const createLog = async (userId: string, payload: ICreateLogs) => {
   try {
-    const result = await prisma.standupLog.create({
+    const result = await prisma.standupLogs.create({
       data: {
         todayWork: payload.todayWork,
         tomorrowWork: payload.tomorrowWork,
@@ -16,9 +15,53 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         projectTag: payload.projectTag || null,
         userId,
         workspaceId: payload.workspaceId || null,
-        role: payload.role,
       },
+      include : {
+        member : {
+          select : {
+            name : true,
+            email : true,
+          }
+        },
+        workSpace : {
+          select : {
+            name : true,
+            admin : {
+              select : {
+                email : true,
+                role : true,
+              }
+            }
+          }  
+        }
+      }
     });
+
+
+    if (result.blocker) {
+     const mail = await sendEmail({
+        subject: "New Blocker",
+        to: result.workSpace!.admin.email,
+        templateName: "blocker",
+        templateData: {
+          date : new Date().toLocaleDateString(),
+          memberName: result.member.name,
+          workspaceName: result.workSpace!.name,
+          blocker: result.blocker,
+          blockerImageUrl: result?.blockerUrl,
+          todayWork: result.todayWork,
+          tomorrowWork: result.tomorrowWork,
+        },
+      });
+
+      if(!mail.success){
+        await prisma.standupLogs.delete({
+          where : {
+            id : result.id,
+          }
+        })
+      }
+    }
 
     return result;
   } catch (error) {
@@ -26,9 +69,9 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
   }
 };
 
-const updateLog = async (id: string, payload: ICreateLogs) => {
+const updateLog = async (id: string, payload: IUpdateLogs) => {
   try {
-    const result = await prisma.standupLog.update({
+    const result = await prisma.standupLogs.update({
       where: {
         id,
       },
@@ -48,7 +91,7 @@ const updateLog = async (id: string, payload: ICreateLogs) => {
 
 const deleteLog = async (id: string) => {
   try {
-    const result = await prisma.standupLog.delete({
+    const result = await prisma.standupLogs.delete({
       where: {
         id,
       },
@@ -62,7 +105,7 @@ const deleteLog = async (id: string) => {
 
 const getLogById = async (id: string) => {
   try {
-    const result = await prisma.standupLog.findUnique({
+    const result = await prisma.standupLogs.findUnique({
       where: {
         id,
       },
@@ -77,15 +120,15 @@ const getLogById = async (id: string) => {
 const getLogs = async (query: IQueryParams, userId: string) => {
   try {
     const [data, count] = await Promise.all([
-      prisma.standupLog.findMany(
-        new QueryBuilder<Prisma.StandupLogFindManyArgs>(query)
+      prisma.standupLogs.findMany(
+        new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
           .filter({ userId })
           .search(["todayWork", "tomorrowWork", "projectTag"])
           .sort()
           .paginate()
           .build(),
       ),
-      prisma.standupLog.count(new QueryBuilder(query).getWhere()),
+      prisma.standupLogs.count(new QueryBuilder(query).getWhere()),
     ]);
 
     return {
@@ -102,17 +145,20 @@ const getLogs = async (query: IQueryParams, userId: string) => {
   }
 };
 
-const getLogsByWorkspaceId = async (query : IQueryParams, workspaceId: string) => {
+const getLogsByWorkspaceId = async (
+  query: IQueryParams,
+  workspaceId: string,
+) => {
   try {
     const [data, count] = await Promise.all([
-      prisma.standupLog.findMany(
-        new QueryBuilder<Prisma.StandupLogFindManyArgs>(query)
+      prisma.standupLogs.findMany(
+        new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
           .filter({ workspaceId })
           .sort()
           .paginate()
           .build(),
       ),
-      prisma.standupLog.count(new QueryBuilder(query).getWhere())
+      prisma.standupLogs.count(new QueryBuilder(query).getWhere()),
     ]);
 
     return {
@@ -124,7 +170,6 @@ const getLogsByWorkspaceId = async (query : IQueryParams, workspaceId: string) =
         totalPages: Math.ceil(count / Number(query.limit || 10)),
       },
     };
-
   } catch (error) {
     throw error;
   }
@@ -133,14 +178,14 @@ const getLogsByWorkspaceId = async (query : IQueryParams, workspaceId: string) =
 const getAllBlockerLogs = async (query: IQueryParams, blocker: string) => {
   try {
     const [data, count] = await Promise.all([
-      prisma.standupLog.findMany(
-        new QueryBuilder<Prisma.StandupLogFindManyArgs>(query)
+      prisma.standupLogs.findMany(
+        new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
           .filter({ blocker })
           .sort()
           .paginate()
           .build(),
       ),
-      prisma.standupLog.count(new QueryBuilder(query).getWhere())
+      prisma.standupLogs.count(new QueryBuilder(query).getWhere()),
     ]);
 
     return {
