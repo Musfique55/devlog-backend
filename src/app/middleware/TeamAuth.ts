@@ -11,7 +11,7 @@ export const teamAuth = (...roles: TEAM_ROLE[]) => {
     const teamMember = await prisma.workspaceMember.findUnique({
         where : {
             workspaceId_userId : {
-                workspaceId : req.params.id as string,
+                workspaceId : req.params.workspaceId as string,
                 userId : req.user!.id
             }
         },

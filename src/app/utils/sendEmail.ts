@@ -31,7 +31,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (options: SendEmailOptions) => {
     const { to, subject, templateName, templateData, attachments } = options;
     try {
-        const templatePath = path.resolve(process.cwd(),`/src/app/templates/${templateName}.ejs`);
+        const templatePath = path.resolve(process.cwd(),`src/app/templates/${templateName}.ejs`);
 
         const template = await ejs.renderFile(templatePath,templateData);
 

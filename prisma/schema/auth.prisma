@@ -1,7 +1,7 @@
 model User {
   id            String    @id
   name          String
-  email         String
+  email         String   
   emailVerified Boolean   @default(false)
   image         String?
   role          APP_ROLE   @default(USER)

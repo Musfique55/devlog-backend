@@ -3,61 +3,83 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { APP_ROLE, PLAN } from "../generated/prisma/client/enums";
 import { bearer } from "better-auth/plugins";
+import { sendEmail } from "../app/utils/sendEmail";
+import { InviteStatus } from "../generated/prisma/enums";
 
 export const auth = betterAuth({
-    database: prismaAdapter(prisma, {
-        provider: "postgresql", 
-    }),
-    emailAndPassword : {
-        enabled: true,
-        requireEmailVerification : false
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+        const invitedUser = await prisma.invite.findFirst({
+          where : {
+            email : user.email,
+            status : InviteStatus.PENDING
+          },
+        })
+
+        if(invitedUser) return;
+
+        await sendEmail({
+            to : user.email,
+            subject : "email verification link",
+            templateName : "emailVerify",
+            templateData : {
+                name : user.name,
+                verifyUrl : url,
+            }
+        })
     },
-    secret: process.env.BETTER_AUTH_SECRET!,
-    baseUrl: process.env.BETTER_AUTH_URL!,
-    user : {
-        additionalFields : {
-            role : {
-                type : "string",
-                defaultValue : APP_ROLE.USER,
-            },
-            plan : {
-                type : "string",
-                defaultValue : PLAN.FREE,
-            },
-        }
+  },
+  secret: process.env.BETTER_AUTH_SECRET!,
+  baseUrl: process.env.BETTER_AUTH_URL!,
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: APP_ROLE.USER,
+      },
+      plan: {
+        type: "string",
+        defaultValue: PLAN.FREE,
+      }
     },
-    plugins : [
-        bearer(),
-        
-    ],
-    session : {
-        expiresIn : 60 * 60 * 24, // 24 hours
-        updateAge : 60 * 60 * 24, // 24 hours
-        cookieCache : {
-            enabled : true,
-            maxAge : 60 * 60 * 24, // 24 hours
-        }
+  },
+  plugins: [bearer()],
+  session: {
+    expiresIn: 60 * 60 * 24, // 24 hours
+    updateAge: 60 * 60 * 24, // 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60 * 24, // 24 hours
     },
-    advanced : {
-        useSecureCookies : true,
-        cookies : {
-            state : {
-                attributes : {
-                    httpOnly : true,
-                    secure : true,
-                    sameSite : "none",
-                    path : "/"
-                }
-            },
-             sessionToken : {
-                attributes : {
-                    httpOnly : true,
-                    secure : true,
-                    sameSite : "none",
-                    path : "/"
-                }
-             }
-        }
-    }
-    
+  },
+  advanced: {
+    useSecureCookies: true,
+    cookies: {
+      state: {
+        attributes: {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          path: "/",
+        },
+      },
+      sessionToken: {
+        attributes: {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          path: "/",
+        },
+      },
+    },
+  },
 });

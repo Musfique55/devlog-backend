@@ -4,6 +4,9 @@ import { workspaceService } from "./workspace.services";
 import { sendResponse } from "../../shared/sendResponse";
 import status from "http-status";
 import { APP_ROLE } from "../../../generated/prisma/enums";
+import { envVars } from "../../config/env";
+import crypto from "crypto";
+
 
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
   const { name } = req.body;
@@ -16,6 +19,22 @@ const createWorkspace = catchAsync(async (req: Request, res: Response) => {
     data,
   });
 });
+
+const inviteMember = catchAsync(async(req : Request,res : Response) => {
+    const {email} = req.body;
+    const workspaceId = req.params.workspaceId as string;
+    const token = crypto.randomBytes(32).toString("hex");
+    const inviteUrl = `${envVars.FRONTEND_URL}/invite/accept?token=${token}`;
+    const result = await workspaceService.inviteMember(token,email,workspaceId,inviteUrl);
+
+    sendResponse(res,{
+        success : true,
+        statusCode : 200,
+        message : "invite send successfully",
+        data : result,
+    })
+
+})
 
 const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -73,6 +92,7 @@ const updateWorkSpace = catchAsync(async (req: Request, res: Response) => {
 
 export const workspaceController = {
   createWorkspace,
+  inviteMember,
   getWorkSpaceById,
   getAllWorkSpaces,
   deleteWorkSpace,

@@ -1,68 +1,32 @@
 import status from "http-status";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
-import { sendEmail } from "../../utils/sendEmail";
-import { Response } from "express";
+import { InviteStatus } from "../../../generated/prisma/enums";
 import { envVars } from "../../config/env";
+import { WorkspaceMember } from "../../../generated/prisma/client";
 
-const inviteMember = async (
-  token: string,
-  email: string,
-  workspaceId: string,
-  inviteUrl: string,
-) => {
-  try {
-    const response = await prisma.invite.create({
-      data: {
-        token,
-        email,
-        workspaceId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 24 * 7 * 1000), //7days
-      },
-      select: {
-        workspace: {
-          select: {
-            name: true,
-            admin: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
+interface AcceptInviteResult {
+  redirect: string | null;
+  data?: WorkspaceMember;
+}
 
-    if (response) {
-      await sendEmail({
-        subject: "Invitation Link",
-        to: email,
-        templateName: "invite",
-        templateData: {
-          adminName: response.workspace.admin.name,
-          workspaceName: response.workspace.name,
-          inviteUrl,
-          inviteeEmail: email,
-          token,
-        },
-      });
-    }
-    return response;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const acceptInvite = async (res: Response, token: string) => {
+const acceptInvite = async (token: string): Promise<AcceptInviteResult> => {
   try {
     const invite = await prisma.invite.findUnique({
       where: {
         token,
+        expiresAt: {
+          gt: new Date(),
+        },
       },
     });
 
     if (!invite) {
-      throw new AppError("token is not valid", status.NOT_FOUND);
+      throw new AppError("invalid invite link", status.NOT_FOUND);
+    }
+
+    if (invite.status !== InviteStatus.PENDING) {
+      throw new AppError("invite link is not valid", status.BAD_REQUEST);
     }
 
     const user = await prisma.user.findUnique({
@@ -72,23 +36,47 @@ const acceptInvite = async (res: Response, token: string) => {
     });
 
     if (!user) {
-      return res.redirect(`${envVars.FRONTEND_URL}/register?token=${token}`);
+      return { redirect: `${envVars.FRONTEND_URL}/register?token=${token}` };
     }
+    
+    const result = await prisma.$transaction(async (tx) => {
+      const member = await tx.workspaceMember.create({
+        data: {
+          userId: user.id,
+          workspaceId: invite.workspaceId,
+        },
+      });
+      await tx.invite.update({
+        where: {
+          token,
+        },
+        data: {
+          status: InviteStatus.ACCEPTED,
+        },
+      });
 
-    const member = await prisma.workspaceMember.create({
-      data: {
-        userId: user.id,
-        workspaceId: invite.workspaceId,
-      },
+      return member;
     });
-
-    return member;
+    return { redirect: null, data: result };
   } catch (error) {
     throw error;
   }
 };
 
+const updateExpiredTokens = async () => {
+  await prisma.invite.updateMany({
+    where: {
+      expiresAt: {
+        lt: new Date(),
+      },
+    },
+    data: {
+      status: InviteStatus.EXPIRED,
+    },
+  });
+};
+
 export const inviteServices = {
-  inviteMember,
-  acceptInvite
+  acceptInvite,
+  updateExpiredTokens,
 };

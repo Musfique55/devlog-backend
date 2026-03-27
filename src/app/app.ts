@@ -7,13 +7,16 @@ import { indexRoutes } from './routes/router';
 import cookieParser from 'cookie-parser';
 import { globalErrorHandler } from './middleware/globalErrorHandler';
 import { notFound } from './middleware/notFound';
+import cron from "node-cron"
+import { inviteServices } from './module/invite/invite.services';
+import path from "path";
 
 dotenv.config();
 
 const app = express();
 
 app.set("view engine", "ejs");
-app.set("views", "./views");
+app.set("views", path.resolve(process.cwd(), "src/app/templates"));
 
 app.use(cors());
 
@@ -23,7 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
-
+cron.schedule("0 0 * * *",async () => {
+  await inviteServices.updateExpiredTokens();
+})
 
 
 app.get('/', (req, res) => {

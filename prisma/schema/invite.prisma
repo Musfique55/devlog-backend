@@ -17,7 +17,6 @@ enum InviteStatus {
     PENDING
     ACCEPTED
     EXPIRED
-    REJECTED
 }
 
 

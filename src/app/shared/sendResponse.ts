@@ -6,7 +6,13 @@ interface IResponse <t>{
     message : string,
     success : boolean,
     data? : t,
-    meta? : any
+    meta? : {
+        total : number
+        page : number,
+        limit : number,
+        totalPages : number,
+    }
+    redirect? : string
 }
 
 export const sendResponse = <t>(res : Response, responseData : IResponse<t>) => {
@@ -15,6 +21,7 @@ export const sendResponse = <t>(res : Response, responseData : IResponse<t>) => 
         message : responseData.message,
         success : responseData.success,
         data: responseData.data,
-        meta: responseData.meta
+        meta: responseData.meta,
+        redirect : responseData.redirect
     });
 }

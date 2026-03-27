@@ -5,6 +5,7 @@ import { sendResponse } from "../../shared/sendResponse";
 import { status } from "http-status";
 import { tokenUtils } from "../../utils/token";
 import { cookieUtils } from "../../utils/cookie";
+import { inviteServices } from "../invite/invite.services";
 
 const loginUser = catchAsync(async (req : Request, res : Response) => {
     const { email, password } = req.body;
@@ -21,8 +22,11 @@ const loginUser = catchAsync(async (req : Request, res : Response) => {
 });
 
 const registerUser = catchAsync(async (req : Request, res : Response) => {
-    const { name, email, password } = req.body;
-    const data = await authService.registerUser({ name, email, password });
+    const { name, email, password,inviteToken } = req.body;
+    const data = await authService.registerUser({ name, email, password,inviteToken });
+    if(inviteToken){
+        await inviteServices.acceptInvite(inviteToken);
+    }
     tokenUtils.setAccessTokenCookie(res, data.accessToken);
     tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
     tokenUtils.setBetterAuthTokenCookie(res, data.token as string);
