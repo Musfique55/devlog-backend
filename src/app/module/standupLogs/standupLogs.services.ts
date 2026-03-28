@@ -158,7 +158,6 @@ const deleteLogFromWorkspace = async (id: string,workspaceId:string,user:IReques
   }
 };
 
-
 const getLogById = async (id: string) => {
   try {
     const result = await prisma.standupLogs.findUnique({

@@ -1,11 +1,12 @@
 import status from "http-status";
-import { TEAM_ROLE, Workspace } from "../../../generated/prisma/client";
+import { APP_ROLE, TEAM_ROLE, Workspace } from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
 import { sendEmail } from "../../utils/sendEmail";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import { IQueryParams } from "../../types/queryBuilder.types";
 import { WorkspaceFindManyArgs } from "../../../generated/prisma/models";
+import { IRequestUser } from "../../middleware/checkAuth";
 
 const createWorkspace = async (name: string, userId: string) => {
   try {
@@ -119,6 +120,21 @@ const getWorkSpaceById = async (id: string) => {
       where: {
         id,
       },
+      omit : {
+        adminId : true
+      },
+      include : {
+        admin : {
+          select : {
+            id : true,
+            name : true,
+            email : true,
+            role : true,
+            createdAt : true,
+            updatedAt : true,
+          }
+        }
+      }
     });
     return result;
   } catch (error) {
@@ -179,11 +195,33 @@ const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
   }
 };
 
-const deleteWorkSpace = async (id: string) => {
+const deleteWorkSpace = async (id: string,user : IRequestUser) => {
   try {
-    const result = await prisma.workspace.delete({
+    
+    const workspace = await prisma.workspace.findUnique({
       where: {
         id,
+        isDeleted: false,
+      }
+    });
+
+
+    if (!workspace) {
+      throw new AppError("workspace not found", status.NOT_FOUND);
+    }
+
+    if(workspace.adminId !== user.id && user.role !== APP_ROLE.SUPER_ADMIN){
+      throw new AppError("you are not authorized to delete this workspace",status.UNAUTHORIZED);
+    }
+
+
+    const result = await prisma.workspace.update({
+      where: {
+        id,
+      },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
       },
     });
     return result;
@@ -194,6 +232,17 @@ const deleteWorkSpace = async (id: string) => {
 
 const updateWorkSpace = async (id: string, data: Partial<Workspace>) => {
   try {
+    console.log(id);
+    const workspace = await prisma.workspace.findUnique({
+      where: {
+        id,
+        isDeleted: false,
+      },
+    });
+
+    if (!workspace) {
+      throw new AppError("workspace not found", status.NOT_FOUND);
+    }
     const result = await prisma.workspace.update({
       where: {
         id,

@@ -7,6 +7,7 @@ import { APP_ROLE } from "../../../generated/prisma/enums";
 import { envVars } from "../../config/env";
 import crypto from "crypto";
 import { IQueryParams } from "../../types/queryBuilder.types";
+import { IRequestUser } from "../../middleware/checkAuth";
 
 
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
@@ -70,7 +71,7 @@ const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteWorkSpace = catchAsync(async (req: Request, res: Response) => {
-  await workspaceService.deleteWorkSpace(req.params.id as string);
+  await workspaceService.deleteWorkSpace(req.params.workspaceId as string,req.user as IRequestUser);
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace deleted successfully",
@@ -80,7 +81,7 @@ const deleteWorkSpace = catchAsync(async (req: Request, res: Response) => {
 
 const updateWorkSpace = catchAsync(async (req: Request, res: Response) => {
   const data = await workspaceService.updateWorkSpace(
-    req.params.id as string,
+    req.params.workspaceId as string,
     req.body,
   );
   sendResponse(res, {
