@@ -2,28 +2,43 @@ import { IQueryParams } from "../types/queryBuilder.types";
 
 export class QueryBuilder<T extends Record<string, any>> {
   private query: Record<string, any>;
-  constructor(private queryParams : IQueryParams) {
+  constructor(private queryParams: IQueryParams) {
     this.query = {
       where: {},
       include: {},
       orderBy: {},
-      skip : 0,
-      take : 10
+      skip: 0,
+      take: 10,
     };
   }
 
   search(fields: string[] = []): this {
     const searchTerm = this.queryParams.searchTerm;
-    if (searchTerm) {
-      const refined = searchTerm.split("-").join(" ");
-      this.query.where!.OR = fields.map((field) => {
-        return {
-          [field]: {
-            contains: refined,
-            mode: "insensitive",
-          },
+    if (searchTerm && fields && fields.length > 0) {
+      const searchableConditions : Record<string,any>[] = fields.map((field) => {
+        const parts = field.split(".");
+        const refined = searchTerm.split("-").join(" ");
+        const stringFilter = {
+          contains: refined,
+          mode: "insensitive",
         };
-      });
+        if(parts.length === 2){
+          const [relation,field] = parts;
+          return {
+            [relation!]: {
+              [field!]: stringFilter,
+            },
+          };
+        }else{
+          return {
+            [field]: stringFilter,
+          }
+        }
+      })
+
+      this.query.where = {
+        OR: searchableConditions,
+      }
     }
 
     return this;
@@ -87,6 +102,10 @@ export class QueryBuilder<T extends Record<string, any>> {
 
   getWhere() {
     return this.query.where;
+  }
+
+  count () : {where : Record<string,any>}{
+    return {where : this.query.where};
   }
 
   paginate(): this {

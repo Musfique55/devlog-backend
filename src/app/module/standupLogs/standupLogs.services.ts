@@ -1,9 +1,12 @@
-import { Prisma } from "../../../generated/prisma/client";
+import status from "http-status";
+import { APP_ROLE, Prisma, TEAM_ROLE } from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
+import AppError from "../../helper/AppError";
 import { IQueryParams } from "../../types/queryBuilder.types";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import { sendEmail } from "../../utils/sendEmail";
 import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
+import { IRequestUser } from "../../middleware/checkAuth";
 
 const createLog = async (userId: string, payload: ICreateLogs) => {
   try {
@@ -16,36 +19,35 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         userId,
         workspaceId: payload.workspaceId || null,
       },
-      include : {
-        member : {
-          select : {
-            name : true,
-            email : true,
-          }
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
         },
-        workSpace : {
-          select : {
-            name : true,
-            admin : {
-              select : {
-                email : true,
-                role : true,
-              }
-            }
-          }  
-        }
-      }
+        workSpace: {
+          select: {
+            name: true,
+            admin: {
+              select: {
+                email: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-
-    if (result.blocker) {
-     const mail = await sendEmail({
+    if (result.blocker && result.workspaceId) {
+      const mail = await sendEmail({
         subject: "New Blocker",
         to: result.workSpace!.admin.email,
         templateName: "blocker",
         templateData: {
-          date : new Date().toLocaleDateString(),
-          memberName: result.member.name,
+          date: new Date().toLocaleDateString(),
+          memberName: result.user.name,
           workspaceName: result.workSpace!.name,
           blocker: result.blocker,
           blockerImageUrl: result?.blockerUrl,
@@ -54,12 +56,12 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         },
       });
 
-      if(!mail.success){
+      if (!mail.success) {
         await prisma.standupLogs.delete({
-          where : {
-            id : result.id,
-          }
-        })
+          where: {
+            id: result.id,
+          },
+        });
       }
     }
 
@@ -89,8 +91,29 @@ const updateLog = async (id: string, payload: IUpdateLogs) => {
   }
 };
 
-const deleteLog = async (id: string) => {
+const deleteLog = async (id: string,user : IRequestUser) => {
   try {
+    const log = await prisma.standupLogs.findUnique({
+      where : {
+        id,
+      },
+      include : {
+       user : {
+        select : {
+          id : true,
+        }
+       }
+      }
+    });
+
+    if(!log){
+      throw new AppError("Log not found",status.NOT_FOUND);
+    }
+
+    if(log.user.id !== user.id || user.role !== APP_ROLE.SUPER_ADMIN || log.id !== id){
+      throw new AppError("you are not authorized to delete this log",status.UNAUTHORIZED);
+    }
+
     const result = await prisma.standupLogs.delete({
       where: {
         id,
@@ -102,6 +125,39 @@ const deleteLog = async (id: string) => {
     throw error;
   }
 };
+
+const deleteLogFromWorkspace = async (id: string,workspaceId:string,user:IRequestUser) => {
+  try {
+    const workspace = await prisma.workspace.findUnique({
+      where : {
+        id : workspaceId,
+      },
+      include :{
+        members : {
+          where : {
+            user : {
+              id : user.id,
+            }
+          }
+        }
+      }
+    });
+
+    if(workspace?.id !== workspaceId || workspace?.members?.[0]?.role !== TEAM_ROLE.ADMIN){
+      throw new AppError("you are not authorized to delete this log",status.UNAUTHORIZED);
+    }
+
+    const result = await prisma.standupLogs.delete({
+      where: {
+        id,
+      },
+    }); 
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
 
 const getLogById = async (id: string) => {
   try {
@@ -123,7 +179,7 @@ const getLogs = async (query: IQueryParams, userId: string) => {
       prisma.standupLogs.findMany(
         new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
           .filter({ userId })
-          .search(["todayWork", "tomorrowWork", "projectTag"])
+          .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
           .sort()
           .paginate()
           .build(),
@@ -154,6 +210,7 @@ const getLogsByWorkspaceId = async (
       prisma.standupLogs.findMany(
         new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
           .filter({ workspaceId })
+          .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
           .sort()
           .paginate()
           .build(),
@@ -175,12 +232,19 @@ const getLogsByWorkspaceId = async (
   }
 };
 
-const getAllBlockerLogs = async (query: IQueryParams, blocker: string) => {
+const getAllBlockerLogs = async (query: IQueryParams, workspaceId : string,blocker: string) => {
   try {
+    
     const [data, count] = await Promise.all([
       prisma.standupLogs.findMany(
         new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
-          .filter({ blocker })
+          .filter({
+            workspaceId: workspaceId,
+            blocker: {
+              contains: blocker,
+              mode: "insensitive",
+            },
+          })
           .sort()
           .paginate()
           .build(),
@@ -210,4 +274,5 @@ export const StandupLogServices = {
   getLogs,
   getLogsByWorkspaceId,
   getAllBlockerLogs,
+  deleteLogFromWorkspace
 };

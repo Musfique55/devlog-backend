@@ -21,6 +21,12 @@ export interface IQueryParams {
     fields ?: string
     [key : string] : string
 }
+export interface IWhereConditions {
+    OR ? : Record<string,unknown>[]
+    NOT ? : Record<string,unknown>[]
+    AND ? : Record<string,unknown>[]
+    [key : string] : unknown
+}
 
 
 

@@ -4,6 +4,7 @@ import { StandupLogServices } from "./standupLogs.services";
 import { sendResponse } from "../../shared/sendResponse";
 import status from "http-status";
 import { IQueryParams } from "../../types/queryBuilder.types";
+import { IRequestUser } from "../../middleware/checkAuth";
 
 const createLog = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -31,11 +32,23 @@ const updateLog = catchAsync(async (req: Request, res: Response) => {
 
 const deleteLog = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  await StandupLogServices.deleteLog(id);
+  await StandupLogServices.deleteLog(id,req.user as IRequestUser);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "Log updated successfully",
+    message: "Log deleted successfully",
+  });
+});
+
+const deleteLogFromWorkspace = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const workspaceId = req.params.workspaceId as string;
+  const user = req.user!;
+  await StandupLogServices.deleteLogFromWorkspace(id,workspaceId,user);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Log deleted successfully",
   });
 });
 
@@ -75,8 +88,9 @@ const getLogsByWorkspaceId = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllBlockerLogs = catchAsync(async (req: Request, res: Response) => {
-  const blocker = req.params.blocker as string;
-  const result = await StandupLogServices.getAllBlockerLogs(req.query as IQueryParams,blocker);
+  const {workspaceId,blocker} = req.params as {blocker : string,workspaceId : string};
+  const refined = blocker.split("-").join(" ");
+  const result = await StandupLogServices.getAllBlockerLogs(req.query as IQueryParams,workspaceId,refined);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
@@ -94,4 +108,5 @@ export const StandupLogController = {
   getLogs,
   getLogsByWorkspaceId,
   getAllBlockerLogs,
+  deleteLogFromWorkspace
 };

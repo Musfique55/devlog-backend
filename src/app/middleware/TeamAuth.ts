@@ -22,7 +22,8 @@ export const teamAuth = (...roles: TEAM_ROLE[]) => {
 
     if (!teamMember) {
         throw new AppError("Unauthorized",status.UNAUTHORIZED);
-    }   
+    }  
+
 
     if(roles.length && !roles.includes(teamMember.role)){
         throw new AppError("Forbidden",status.FORBIDDEN);

@@ -6,6 +6,7 @@ import status from "http-status";
 import { APP_ROLE } from "../../../generated/prisma/enums";
 import { envVars } from "../../config/env";
 import crypto from "crypto";
+import { IQueryParams } from "../../types/queryBuilder.types";
 
 
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
@@ -51,7 +52,7 @@ const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
   const id = req.user!.id;
   const role = req.user!.role;
   if (role === APP_ROLE.SUPER_ADMIN) {
-    const data = await workspaceService.getAllWorkSpaces();
+    const data = await workspaceService.getAllWorkSpaces(req.query as IQueryParams);
     sendResponse(res, {
       statusCode: status.OK,
       message: "workspaces fetched successfully",
@@ -59,7 +60,7 @@ const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
       data,
     });
   }
-  const data = await workspaceService.getWorkSpacesByUserId(id);
+  const data = await workspaceService.getWorkSpacesByUserId(req.query as IQueryParams,id);
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspaces fetched successfully",

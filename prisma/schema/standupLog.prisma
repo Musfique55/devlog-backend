@@ -2,11 +2,9 @@ model StandupLogs{
     id          String   @id @default(uuid())
     workspaceId String?
     workSpace   Workspace? @relation(fields: [workspaceId], references: [id])
-   
-
 
     userId      String 
-    member       User @relation(fields: [userId], references: [id])
+    user       User @relation(fields: [userId], references: [id])
 
     todayWork  String
     tomorrowWork  String

@@ -11,8 +11,8 @@ const router = Router();
 
 router.post("/create-workspace",checkAuth(APP_ROLE.USER),zodRequestValidation(workspaceValidation.validateWorkSpaceCreate),workspaceController.createWorkspace);
 router.post("/:workspaceId/invite",checkAuth(APP_ROLE.USER),teamAuth(TEAM_ROLE.ADMIN),workspaceController.inviteMember);
-router.get("/get-workspace/:id",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN,TEAM_ROLE.MEMBER),workspaceController.getWorkSpaceById);
-router.get("/get-all-workspaces",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),workspaceController.getAllWorkSpaces);
+router.get("/:id",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN,TEAM_ROLE.MEMBER),workspaceController.getWorkSpaceById);
+router.get("/",checkAuth(APP_ROLE.SUPER_ADMIN),workspaceController.getAllWorkSpaces);
 router.delete("/delete-workspace/:id",checkAuth(APP_ROLE.SUPER_ADMIN),workspaceController.deleteWorkSpace);
 router.patch("/update-workspace/:id",checkAuth(APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN),zodRequestValidation(workspaceValidation.validateWorkSpaceUpdate),workspaceController.updateWorkSpace)
 

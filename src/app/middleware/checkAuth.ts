@@ -7,6 +7,13 @@ import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../utils/jwt";
 import { envVars } from "../config/env";
 
+export interface IRequestUser {
+  id: string;
+  email: string;
+  role: APP_ROLE;
+  plan: string;
+}
+
 declare global {
   namespace Express {
     interface Request {

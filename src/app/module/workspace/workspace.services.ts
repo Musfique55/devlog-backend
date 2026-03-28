@@ -3,6 +3,9 @@ import { TEAM_ROLE, Workspace } from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
 import { sendEmail } from "../../utils/sendEmail";
+import { QueryBuilder } from "../../utils/queryBuilder";
+import { IQueryParams } from "../../types/queryBuilder.types";
+import { WorkspaceFindManyArgs } from "../../../generated/prisma/models";
 
 const createWorkspace = async (name: string, userId: string) => {
   try {
@@ -12,6 +15,9 @@ const createWorkspace = async (name: string, userId: string) => {
           name,
           adminId: userId,
         },
+        include: {
+          admin: true,
+        },
       });
 
       await tx.workspaceMember.create({
@@ -20,11 +26,10 @@ const createWorkspace = async (name: string, userId: string) => {
           userId,
           role: TEAM_ROLE.ADMIN,
         },
-      })
+      });
 
       return workspace;
-
-    })
+    });
     return result;
   } catch (error) {
     console.log(error);
@@ -39,18 +44,17 @@ const inviteMember = async (
   inviteUrl: string,
 ) => {
   try {
-
     const existingMember = await prisma.workspaceMember.findFirst({
       where: {
         workspaceId,
-        user : {
-          email
-        }
-      }
+        user: {
+          email,
+        },
+      },
     });
 
-    if(existingMember){
-      throw new AppError("user already exist in workspace",status.BAD_REQUEST);
+    if (existingMember) {
+      throw new AppError("user already exist in workspace", status.BAD_REQUEST);
     }
 
     const existingInvite = await prisma.invite.findFirst({
@@ -123,20 +127,63 @@ const getWorkSpaceById = async (id: string) => {
   }
 };
 
-const getAllWorkSpaces = async () => {
+const getAllWorkSpaces = async (query: IQueryParams) => {
   try {
-    const result = await prisma.workspace.findMany();
-    return result;
+    const builder = new QueryBuilder<WorkspaceFindManyArgs>(query)
+      .search(["name", "admin.name", "admin.email","admin.id"])
+      .sort()
+      .paginate();
+
+    const [data, count] = await Promise.all([
+      prisma.workspace.findMany(builder.build()),
+      prisma.workspace.count(builder.count()),
+    ]);
+    return {
+      data,
+      meta: {
+        total: count,
+        page: query.page,
+        limit: Number(query.limit) || 10,
+        totalPages: Math.ceil(count / Number(query.limit || 10)),
+      },
+    };
   } catch (error) {
     throw error;
   }
 };
 
-const getWorkSpacesByUserId = async (userId: string) => {
+const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
   try {
-    const result = await prisma.workspace.findMany({
-      where: {
+    const builder = new QueryBuilder<WorkspaceFindManyArgs>(query)
+      .sort()
+      .paginate()
+      .search(["name"])
+      .filter({
         adminId: userId,
+      });
+    const [data, count] = await Promise.all([
+      prisma.workspace.findMany(builder.build()),
+      prisma.workspace.count(builder.count())
+    ]);
+    return {
+      data,
+      meta: {
+        total: count,
+        page: query.page,
+        limit: Number(query.limit) || 10,
+        totalPages: Math.ceil(count / Number(query.limit || 10)),
+      },
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+const deleteWorkSpace = async (id: string) => {
+  try {
+    const result = await prisma.workspace.delete({
+      where: {
+        id,
       },
     });
     return result;
@@ -145,33 +192,19 @@ const getWorkSpacesByUserId = async (userId: string) => {
   }
 };
 
-
-const deleteWorkSpace = async (id: string) => {
-    try {
-        const result = await prisma.workspace.delete({
-            where : {
-                id
-            }
-        });
-        return result;
-    } catch (error) {
-        throw error;
-    }
-}
-
-const updateWorkSpace = async (id : string,data : Partial<Workspace>) => {
-    try {
-        const result = await prisma.workspace.update({
-            where : {
-                id
-            },
-            data
-        });
-        return result;
-    } catch (error) {
-        throw error;
-    }
-}
+const updateWorkSpace = async (id: string, data: Partial<Workspace>) => {
+  try {
+    const result = await prisma.workspace.update({
+      where: {
+        id,
+      },
+      data,
+    });
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const workspaceService = {
   createWorkspace,
