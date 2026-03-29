@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { APP_ROLE, TEAM_ROLE } from "../../generated/prisma/enums";
+import { APP_ROLE } from "../../generated/prisma/enums";
 import { cookieUtils } from "../utils/cookie";
 import AppError from "../helper/AppError";
 import status from "http-status";
@@ -12,6 +12,7 @@ export interface IRequestUser {
   email: string;
   role: APP_ROLE;
   plan: string;
+  isBlocked: boolean;
 }
 
 declare global {
@@ -22,6 +23,7 @@ declare global {
         email: string;
         role: APP_ROLE;
         plan: string;
+        isBlocked: boolean;
       };
     }
   }
@@ -49,7 +51,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
       },
     });
 
-    if (session && session.user) {
+    if (session && session.user && !session.user.isBlocked) {
 
     const user = session.user;
 
@@ -98,6 +100,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
       email: session.user.email,
       role: session.user.role,
       plan: session.user.plan,
+      isBlocked: session.user.isBlocked,
     };
     next();
   };

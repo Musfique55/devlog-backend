@@ -1,34 +1,33 @@
 model Workspace {
-    id          String   @id @default(uuid())
-    name        String
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    deletedAt   DateTime?
-    isDeleted   Boolean  @default(false) 
+    id        String    @id @default(uuid())
+    name      String
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+    isDeleted Boolean   @default(false)
 
-   adminId     String
-    admin       User     @relation(fields: [adminId], references: [id])
-    members     WorkspaceMember[]
-    invites     Invite[]
-    logs        StandupLogs[]
-    
-   @@map("workspace")
-   @@index([adminId])
+    adminId String
+    admin   User              @relation(fields: [adminId], references: [id])
+    members WorkspaceMember[]
+    invites Invite[]
+    logs    StandupLogs[]
+
+    @@index([adminId])
+    @@map("workspace")
 }
 
 model WorkspaceMember {
-    id          String   @id @default(uuid())
+    id          String    @id @default(uuid())
     workspaceId String
     userId      String
-    role        TEAM_ROLE   @default(MEMBER)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    joinedAt    DateTime @default(now())
-    deletedAt   DateTime? 
+    role        TEAM_ROLE @default(MEMBER)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    joinedAt    DateTime  @default(now())
+    deletedAt   DateTime?
 
-
-    workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-    user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([workspaceId, userId])
     @@index([userId])

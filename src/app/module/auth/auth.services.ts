@@ -21,6 +21,10 @@ const loginUser = async (payload: { email: string; password: string }) => {
       throw new AppError("User login failed", status.UNAUTHORIZED);
     }
 
+    if(data.user.isBlocked){
+      throw new AppError("Your account has been blocked. Please contact support.", status.FORBIDDEN);
+    }
+
     const payloadForToken = {
       userId: data.user.id,
       email: data.user.email,

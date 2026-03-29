@@ -23,7 +23,7 @@ const updateStreak = async (userId: string) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
@@ -31,14 +31,13 @@ const updateStreak = async (userId: string) => {
 
     let newStreak = 1;
 
-    if(lastLog){
-
-      if(lastLog.getTime() === today.getTime()){
-        return;  // Already updated today
-      }else if(lastLog.getTime() === yesterday.getTime()){
-        newStreak = (user?.currentStreak ?? 0) + 1;  // Increment streak
-      }else{
-        newStreak = 1;  // Reset streak
+    if (lastLog) {
+      if (lastLog.getTime() === today.getTime()) {
+        return; // Already updated today
+      } else if (lastLog.getTime() === yesterday.getTime()) {
+        newStreak = (user?.currentStreak ?? 0) + 1; // Increment streak
+      } else {
+        newStreak = 1; // Reset streak
       }
     }
 
@@ -49,12 +48,13 @@ const updateStreak = async (userId: string) => {
       data: {
         currentStreak: newStreak,
         lastLogDate: today,
-        longestStreak : newStreak > (user.longestStreak ?? 0) ? newStreak : user.longestStreak,
-      }
-    })
-
-  }
-  catch (error) {
+        longestStreak:
+          newStreak > (user.longestStreak ?? 0)
+            ? newStreak
+            : user.longestStreak,
+      },
+    });
+  } catch (error) {
     throw error;
   }
 };
@@ -71,10 +71,12 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       throw new AppError("User not found", status.NOT_FOUND);
     }
 
-    if(user.isBlocked){
-      throw new AppError("You are blocked. Please contact support.", status.FORBIDDEN);
+    if (user.isBlocked) {
+      throw new AppError(
+        "You are blocked. Please contact support.",
+        status.FORBIDDEN,
+      );
     }
-
 
     const result = await prisma.standupLogs.create({
       data: {
@@ -132,7 +134,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       }
     }
 
-   await updateStreak(userId);
+    await updateStreak(userId);
 
     return result;
   } catch (error) {
@@ -140,20 +142,29 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
   }
 };
 
-const updateLog = async (id: string, payload: IUpdateLogs,user : IRequestUser) => {
+const updateLog = async (
+  id: string,
+  payload: IUpdateLogs,
+  user: IRequestUser,
+) => {
   try {
-    const log = await prisma.standupLogs.findUnique({
-      where : {
-        id,
-        userId : user.id,
-      }
-    });
-
-
-    if(!log){
-      throw new AppError("Log not found", status.NOT_FOUND);
+    if (user.isBlocked) {
+      throw new AppError(
+        "You are blocked. Please contact support.",
+        status.FORBIDDEN,
+      );
     }
 
+    const log = await prisma.standupLogs.findUnique({
+      where: {
+        id,
+        userId: user.id,
+      },
+    });
+
+    if (!log) {
+      throw new AppError("Log not found", status.NOT_FOUND);
+    }
 
     const result = await prisma.standupLogs.update({
       where: {
@@ -386,6 +397,97 @@ const getAllBlockerLogs = async (
   }
 };
 
+const getWeeklyLogsReport = async (query: IQueryParams, userId: string) => {
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [logs, count] = await Promise.all([
+      prisma.standupLogs.findMany({
+        where: {
+          userId,
+          createdAt: {
+            gte: oneWeekAgo,
+            lte: today,
+          },
+        },
+        include: {
+          user: true,
+          workSpace: {
+            select: {
+              name: true,
+              members: {
+                select: {
+                  user: {
+                    select: {
+                      name: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        skip:
+          query?.page && query?.limit
+            ? (Number(query.page) - 1) * Number(query.limit)
+            : 0,
+        take: Number(query.limit) || 10,
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      prisma.standupLogs.count({
+        where: {
+          userId,
+          createdAt: {
+            gte: oneWeekAgo,
+            lte: today,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: logs,
+      meta: {
+        total: count,
+        page: Number(query.page) || 1,
+        limit: Number(query.limit) || 10,
+        totalPages: Math.ceil(count / Number(query.limit || 10)),
+      },
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+const standupLogCount = async (userId: string) => {
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const count = await prisma.standupLogs.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: oneWeekAgo,
+          lte: today,
+        },
+      },
+    });
+
+    return count;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const StandupLogServices = {
   createLog,
   updateLog,
@@ -395,4 +497,6 @@ export const StandupLogServices = {
   getLogsByWorkspaceId,
   getAllBlockerLogs,
   deleteLogFromWorkspace,
+  getWeeklyLogsReport,
+  standupLogCount,
 };

@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { toNodeHandler } from 'better-auth/node';
@@ -10,6 +10,11 @@ import { notFound } from './middleware/notFound';
 import cron from "node-cron"
 import { inviteServices } from './module/invite/invite.services';
 import path from "path";
+import { StandupLogServices } from './module/standupLogs/standupLogs.services';
+import { IQueryParams } from './types/queryBuilder.types';
+import { prisma } from '../lib/prisma';
+import { sendEmail } from './utils/sendEmail';
+import { getWeekRange } from './utils/getWeekRange';
 
 dotenv.config();
 
@@ -28,6 +33,45 @@ app.use(cookieParser());
 
 cron.schedule("0 0 * * *",async () => {
   await inviteServices.updateExpiredTokens();
+})
+
+cron.schedule("0 9 * * 5", async () => {
+    const workspaces = await prisma.workspace.findMany({
+      include : {
+        admin : true,
+        members : {
+          include : {
+            user : true
+          }
+        },
+        logs : true
+      }
+    });
+
+    for(const workspace of workspaces){
+      await sendEmail({
+        to : workspace.admin.email,
+        subject : `Weekly Standup Report for ${workspace.name}`,
+        templateName : "weekly-report",
+        templateData : {
+          workspaceName : workspace.name,
+          members : workspace.members.filter(member => member.userId !== workspace.adminId).map(member => ({
+           name : member.user.name,
+           logCount : workspace.logs.filter(log => log.userId === member.userId).length,
+          })),
+          totalMembers : workspace.members.length,
+          weekRange : getWeekRange(),
+          totalLogs : await StandupLogServices.standupLogCount(workspace.adminId),
+          totalBlockers : workspace.logs.filter(log => log.blocker).length,
+          blockers : workspace.logs.filter(log => log.blocker).map(log => ({
+            memberName : workspace.members.find(member => member.userId === log.userId)?.user.name,
+            date : log.createdAt.toDateString(),
+            text : log.blocker,
+          })),
+          workspaceUrl : `${process.env.FRONTEND_URL}/workspace/${workspace.id}`
+        }
+      })
+    }
 })
 
 
