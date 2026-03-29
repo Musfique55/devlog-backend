@@ -37,6 +37,12 @@ cron.schedule("0 0 * * *",async () => {
 
 cron.schedule("0 9 * * 5", async () => {
     const workspaces = await prisma.workspace.findMany({
+      where : {
+        admin : {
+          isBlocked : false,
+          plan : "PRO"
+        }
+      },
       include : {
         admin : true,
         members : {
