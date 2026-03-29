@@ -3,12 +3,15 @@ import z from "zod";
 import { zodErrorHelper } from "../helper/zodErrorHelper";
 import AppError from "../helper/AppError";
 import status from "http-status";
+import { cleanupCloudinary } from "../utils/cleanupCloudinary";
 
 export function globalErrorHandler(err : any, req : Request, res : Response, next : NextFunction) {
     let statusCode : number = status.INTERNAL_SERVER_ERROR;
     let message = err.message || "Internal Server Error";
     let stack = "";
     let errors : { path: string; message: string }[] = [];
+
+    cleanupCloudinary(req);
 
     if(err instanceof z.ZodError){
         const zodError = zodErrorHelper(err);

@@ -15,6 +15,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         todayWork: payload.todayWork,
         tomorrowWork: payload.tomorrowWork,
         blocker: payload.blocker || null,
+        blockerUrl: payload.blockerUrl || [],
         projectTag: payload.projectTag || null,
         userId,
         workspaceId: payload.workspaceId || null,

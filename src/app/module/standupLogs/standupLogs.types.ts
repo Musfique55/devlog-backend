@@ -6,6 +6,7 @@ export interface ICreateLogs {
     blocker? : string;
     projectTag? : string;
     workspaceId? : string;
+    blockerUrl? : string[];
 }
 export interface IUpdateLogs {
     todayWork : string;
