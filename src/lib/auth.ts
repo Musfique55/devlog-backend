@@ -5,6 +5,7 @@ import { APP_ROLE, PLAN } from "../generated/prisma/client/enums";
 import { bearer } from "better-auth/plugins";
 import { sendEmail } from "../app/utils/sendEmail";
 import { InviteStatus } from "../generated/prisma/enums";
+import { is } from "zod/locales";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -49,6 +50,36 @@ export const auth = betterAuth({
       plan: {
         type: "string",
         defaultValue: PLAN.FREE,
+      },
+      currentStreak : {
+        type : "number",
+        defaultValue : 0,
+        required : false
+      },
+      longestStreak : {
+        type : "number",
+        defaultValue : 0,
+        required : false
+      },
+      lastLogDate : {
+        type : "date",
+        defaultValue : null,
+        required : false
+      },
+      isBlocked: {
+        type: "boolean",
+        defaultValue: false,
+        required: false,
+      },
+      blockedReason: {
+        type: "string",
+        defaultValue: null,
+        required: false,
+      },
+      blockedAt : {
+        type : "date",
+        defaultValue : null,
+        required : false
       }
     },
   },

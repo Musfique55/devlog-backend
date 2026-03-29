@@ -44,10 +44,10 @@ const registerUser = async (payload: {
   name: string;
   email: string;
   password: string;
-  inviteToken : string;
+  inviteToken: string;
 }) => {
   try {
-    const { name, email, password,inviteToken } = payload;
+    const { name, email, password, inviteToken } = payload;
 
     const data = await auth.api.signUpEmail({
       body: {
@@ -61,13 +61,13 @@ const registerUser = async (payload: {
       throw new AppError("User registration failed", status.BAD_REQUEST);
     }
 
-    if(inviteToken){
+    if (inviteToken) {
       await prisma.user.update({
         where: {
           id: data.user.id,
         },
         data: {
-          emailVerified : true
+          emailVerified: true,
         },
       });
     }
@@ -158,7 +158,59 @@ const logoutUser = async (sessionToken: string) => {
   return result;
 };
 
-const updateEmailVerification = async(userId: string) => {
+const updateProfile = async (userId: string, payload: { name: string; image: string }) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if(!user){
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: payload,
+    });
+
+    return updatedUser;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getMe = async (userId: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include : {
+        workspaces : {
+          omit : {
+            adminId : true,
+            deletedAt : true,
+            isDeleted : true,
+          }
+        },
+      }
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    return user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const updateEmailVerification = async (userId: string) => {
   try {
     await prisma.user.update({
       where: {
@@ -171,12 +223,14 @@ const updateEmailVerification = async(userId: string) => {
   } catch (error) {
     throw error;
   }
-}
+};
 
 export const authService = {
   loginUser,
   registerUser,
+  updateProfile,
   getNewTokens,
   logoutUser,
-  updateEmailVerification
+  updateEmailVerification,
+  getMe
 };

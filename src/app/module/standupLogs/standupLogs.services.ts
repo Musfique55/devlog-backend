@@ -7,9 +7,75 @@ import { QueryBuilder } from "../../utils/queryBuilder";
 import { sendEmail } from "../../utils/sendEmail";
 import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
 import { IRequestUser } from "../../middleware/checkAuth";
+import { PLAN } from "../../../generated/prisma/client/enums";
+
+const updateStreak = async (userId: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const lastLog = user.lastLogDate ? new Date(user.lastLogDate) : null;
+
+    let newStreak = 1;
+
+    if(lastLog){
+
+      if(lastLog.getTime() === today.getTime()){
+        return;  // Already updated today
+      }else if(lastLog.getTime() === yesterday.getTime()){
+        newStreak = (user?.currentStreak ?? 0) + 1;  // Increment streak
+      }else{
+        newStreak = 1;  // Reset streak
+      }
+    }
+
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        currentStreak: newStreak,
+        lastLogDate: today,
+        longestStreak : newStreak > (user.longestStreak ?? 0) ? newStreak : user.longestStreak,
+      }
+    })
+
+  }
+  catch (error) {
+    throw error;
+  }
+};
 
 const createLog = async (userId: string, payload: ICreateLogs) => {
   try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    if(user.isBlocked){
+      throw new AppError("You are blocked. Please contact support.", status.FORBIDDEN);
+    }
+
+
     const result = await prisma.standupLogs.create({
       data: {
         todayWork: payload.todayWork,
@@ -66,14 +132,29 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       }
     }
 
+   await updateStreak(userId);
+
     return result;
   } catch (error) {
     throw error;
   }
 };
 
-const updateLog = async (id: string, payload: IUpdateLogs) => {
+const updateLog = async (id: string, payload: IUpdateLogs,user : IRequestUser) => {
   try {
+    const log = await prisma.standupLogs.findUnique({
+      where : {
+        id,
+        userId : user.id,
+      }
+    });
+
+
+    if(!log){
+      throw new AppError("Log not found", status.NOT_FOUND);
+    }
+
+
     const result = await prisma.standupLogs.update({
       where: {
         id,
@@ -92,27 +173,34 @@ const updateLog = async (id: string, payload: IUpdateLogs) => {
   }
 };
 
-const deleteLog = async (id: string,user : IRequestUser) => {
+const deleteLog = async (id: string, user: IRequestUser) => {
   try {
     const log = await prisma.standupLogs.findUnique({
-      where : {
+      where: {
         id,
       },
-      include : {
-       user : {
-        select : {
-          id : true,
-        }
-       }
-      }
+      include: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
-    if(!log){
-      throw new AppError("Log not found",status.NOT_FOUND);
+    if (!log) {
+      throw new AppError("Log not found", status.NOT_FOUND);
     }
 
-    if(log.user.id !== user.id || user.role !== APP_ROLE.SUPER_ADMIN || log.id !== id){
-      throw new AppError("you are not authorized to delete this log",status.UNAUTHORIZED);
+    if (
+      log.user.id !== user.id ||
+      user.role !== APP_ROLE.SUPER_ADMIN ||
+      log.id !== id
+    ) {
+      throw new AppError(
+        "you are not authorized to delete this log",
+        status.UNAUTHORIZED,
+      );
     }
 
     const result = await prisma.standupLogs.delete({
@@ -127,32 +215,42 @@ const deleteLog = async (id: string,user : IRequestUser) => {
   }
 };
 
-const deleteLogFromWorkspace = async (id: string,workspaceId:string,user:IRequestUser) => {
+const deleteLogFromWorkspace = async (
+  id: string,
+  workspaceId: string,
+  user: IRequestUser,
+) => {
   try {
     const workspace = await prisma.workspace.findUnique({
-      where : {
-        id : workspaceId,
+      where: {
+        id: workspaceId,
       },
-      include :{
-        members : {
-          where : {
-            user : {
-              id : user.id,
-            }
-          }
-        }
-      }
+      include: {
+        members: {
+          where: {
+            user: {
+              id: user.id,
+            },
+          },
+        },
+      },
     });
 
-    if(workspace?.id !== workspaceId || workspace?.members?.[0]?.role !== TEAM_ROLE.ADMIN){
-      throw new AppError("you are not authorized to delete this log",status.UNAUTHORIZED);
+    if (
+      workspace?.id !== workspaceId ||
+      workspace?.members?.[0]?.role !== TEAM_ROLE.ADMIN
+    ) {
+      throw new AppError(
+        "you are not authorized to delete this log",
+        status.UNAUTHORIZED,
+      );
     }
 
     const result = await prisma.standupLogs.delete({
       where: {
         id,
       },
-    }); 
+    });
     return result;
   } catch (error) {
     throw error;
@@ -175,16 +273,35 @@ const getLogById = async (id: string) => {
 
 const getLogs = async (query: IQueryParams, userId: string) => {
   try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    const historyFilter =
+      user.plan === PLAN.FREE
+        ? {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // last 30 days
+            },
+            userId,
+          }
+        : { userId };
+
+    const builder = new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
+      .filter(historyFilter)
+      .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
+      .sort()
+      .paginate();
+
     const [data, count] = await Promise.all([
-      prisma.standupLogs.findMany(
-        new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
-          .filter({ userId })
-          .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
-          .sort()
-          .paginate()
-          .build(),
-      ),
-      prisma.standupLogs.count(new QueryBuilder(query).getWhere()),
+      prisma.standupLogs.findMany(builder.build()),
+      prisma.standupLogs.count(builder.getWhere()),
     ]);
 
     return {
@@ -232,9 +349,12 @@ const getLogsByWorkspaceId = async (
   }
 };
 
-const getAllBlockerLogs = async (query: IQueryParams, workspaceId : string,blocker: string) => {
+const getAllBlockerLogs = async (
+  query: IQueryParams,
+  workspaceId: string,
+  blocker: string,
+) => {
   try {
-    
     const [data, count] = await Promise.all([
       prisma.standupLogs.findMany(
         new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
@@ -274,5 +394,5 @@ export const StandupLogServices = {
   getLogs,
   getLogsByWorkspaceId,
   getAllBlockerLogs,
-  deleteLogFromWorkspace
+  deleteLogFromWorkspace,
 };

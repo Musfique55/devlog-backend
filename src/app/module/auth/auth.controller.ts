@@ -21,6 +21,33 @@ const loginUser = catchAsync(async (req : Request, res : Response) => {
     });
 });
 
+const updateProfile = catchAsync(async (req : Request, res : Response) => {
+    const userId = req.user?.id as string;
+    const payload = {
+        ...req.body,
+        image : req.file?.path
+    }
+    const data = await authService.updateProfile(userId, payload);
+    sendResponse(res, {
+        statusCode : status.OK,
+        message : "User updated successfully",
+        success : true,
+        data,
+    });
+});
+
+const getMe = catchAsync(async (req : Request, res : Response) => { 
+    const userId = req.user?.id as string;
+    const data = await authService.getMe(userId);
+    sendResponse(res, {
+        statusCode : status.OK,
+        message : "User profile fetched successfully",
+        success : true,
+        data,
+    });
+ });
+
+
 const registerUser = catchAsync(async (req : Request, res : Response) => {
     const { name, email, password,inviteToken } = req.body;
     const data = await authService.registerUser({ name, email, password,inviteToken });
@@ -76,5 +103,7 @@ export const authController = {
     loginUser,
     registerUser,
     getNewTokens,
-    logoutUser
+    updateProfile,
+    logoutUser,
+    getMe
 }

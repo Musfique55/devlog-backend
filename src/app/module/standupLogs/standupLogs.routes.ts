@@ -18,7 +18,7 @@ router.post(
 router.patch("/:id", checkAuth(APP_ROLE.USER), StandupLogController.updateLog);
 router.delete("/:id", checkAuth(APP_ROLE.USER), StandupLogController.deleteLog);
 router.get("/:id", checkAuth(APP_ROLE.USER), StandupLogController.getLogById);
-router.get("/", StandupLogController.getLogs);
+router.get("/",checkAuth(APP_ROLE.USER),StandupLogController.getLogs);
 router.get(
   "/workspace/:workspaceId",
   checkAuth(APP_ROLE.USER),

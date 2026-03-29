@@ -4,13 +4,17 @@ import zodRequestValidation from "../../helper/zodRequestValidation";
 import { authSchemas } from "./auth.validator";
 import { checkAuth } from "../../middleware/checkAuth";
 import { APP_ROLE } from "../../../generated/prisma/enums";
+import { multerStorage } from "../../config/multer.config";
 
 const router = Router();
 
 router.post("/login", zodRequestValidation(authSchemas.loginSchema) ,authController.loginUser);
 router.post("/register", zodRequestValidation(authSchemas.registerSchema), authController.registerUser);
+router.patch("/update-profile", multerStorage.single("image"),checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), 
+zodRequestValidation(authSchemas.updateProfileSchema), authController.updateProfile);
 router.get("/refresh-token",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),authController.getNewTokens);
 router.post("/logout", checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), authController.logoutUser);
+router.get("/me", checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), authController.getMe);
 
 
 export const authRoutes = router;
