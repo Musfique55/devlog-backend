@@ -8,7 +8,7 @@ export const getWeekRange = () => {
   friday.setDate(friday.getDate() + 6);
 
     const format = (date: Date) => {
-        date.toLocaleDateString("en-US", {
+       return date.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",

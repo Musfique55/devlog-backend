@@ -334,16 +334,15 @@ const getLogsByWorkspaceId = async (
   workspaceId: string,
 ) => {
   try {
+    const queryBuilder = new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
+      .filter({ workspaceId })
+      .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
+      .sort()
+      .paginate();
+
     const [data, count] = await Promise.all([
-      prisma.standupLogs.findMany(
-        new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
-          .filter({ workspaceId })
-          .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
-          .sort()
-          .paginate()
-          .build(),
-      ),
-      prisma.standupLogs.count(new QueryBuilder(query).getWhere()),
+      prisma.standupLogs.findMany(queryBuilder.build()),
+      prisma.standupLogs.count(queryBuilder.getWhere()),
     ]);
 
     return {
@@ -366,21 +365,19 @@ const getAllBlockerLogs = async (
   blocker: string,
 ) => {
   try {
+    const queryBuilder = new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
+      .filter({
+        workspaceId: workspaceId,
+        blocker: {
+          contains: blocker,
+          mode: "insensitive",
+        },
+      })
+      .sort()
+      .paginate();
     const [data, count] = await Promise.all([
-      prisma.standupLogs.findMany(
-        new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
-          .filter({
-            workspaceId: workspaceId,
-            blocker: {
-              contains: blocker,
-              mode: "insensitive",
-            },
-          })
-          .sort()
-          .paginate()
-          .build(),
-      ),
-      prisma.standupLogs.count(new QueryBuilder(query).getWhere()),
+      prisma.standupLogs.findMany(queryBuilder.build()),
+      prisma.standupLogs.count(queryBuilder.getWhere()),
     ]);
 
     return {

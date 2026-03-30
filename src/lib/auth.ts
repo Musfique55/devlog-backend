@@ -5,7 +5,7 @@ import { APP_ROLE, PLAN } from "../generated/prisma/client/enums";
 import { bearer } from "better-auth/plugins";
 import { sendEmail } from "../app/utils/sendEmail";
 import { InviteStatus } from "../generated/prisma/enums";
-import { is } from "zod/locales";
+
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -80,7 +80,17 @@ export const auth = betterAuth({
         type : "date",
         defaultValue : null,
         required : false
-      }
+      },
+      isDeleted: {
+        type: "boolean",
+        defaultValue: false,
+        required: false,
+      },
+      deletedAt: {
+        type: "date",
+        defaultValue: null,
+        required: false,
+      },
     },
   },
   plugins: [bearer()],

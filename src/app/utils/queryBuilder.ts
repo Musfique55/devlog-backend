@@ -17,7 +17,7 @@ export class QueryBuilder<T extends Record<string, any>> {
     if (searchTerm && fields && fields.length > 0) {
       const searchableConditions : Record<string,any>[] = fields.map((field) => {
         const parts = field.split(".");
-        const refined = searchTerm.split("-").join(" ");
+        const refined = decodeURIComponent(searchTerm);
         const stringFilter = {
           contains: refined,
           mode: "insensitive",

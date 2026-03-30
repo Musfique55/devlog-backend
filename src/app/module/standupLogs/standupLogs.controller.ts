@@ -21,7 +21,7 @@ const createLog = catchAsync(async (req: Request, res: Response) => {
 const updateLog = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const payload = req.body;
-  const result = await StandupLogServices.updateLog(id, payload);
+  const result = await StandupLogServices.updateLog(id, payload,req.user as IRequestUser);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
