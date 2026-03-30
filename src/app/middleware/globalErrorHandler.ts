@@ -4,6 +4,8 @@ import { zodErrorHelper } from "../helper/zodErrorHelper";
 import AppError from "../helper/AppError";
 import status from "http-status";
 import { cleanupCloudinary } from "../utils/cleanupCloudinary";
+import { handlePrismaClientKnownRequestError, handlePrismaClientUnknownError, handlePrismaClientValidationError, handlerPrismaClientInitializationError, handlerPrismaClientRustPanicError } from "../helper/handlePrismaError";
+import { Prisma } from "../../generated/prisma/client";
 
 export function globalErrorHandler(err : any, req : Request, res : Response, next : NextFunction) {
     let statusCode : number = status.INTERNAL_SERVER_ERROR;
@@ -13,7 +15,32 @@ export function globalErrorHandler(err : any, req : Request, res : Response, nex
 
     cleanupCloudinary(req);
 
-    if(err instanceof z.ZodError){
+    if(err instanceof Prisma.PrismaClientKnownRequestError){
+        const prismaErrorResponse = handlePrismaClientKnownRequestError(err);
+        statusCode = prismaErrorResponse.statusCode;
+        message = prismaErrorResponse.message;
+        errors = prismaErrorResponse.errorSources || [];
+    }else if(err instanceof Prisma.PrismaClientUnknownRequestError){
+        const prismaErrorResponse = handlePrismaClientUnknownError(err);
+        statusCode = prismaErrorResponse.statusCode;
+        message = prismaErrorResponse.message;
+        errors = prismaErrorResponse.errorSources || [];
+    }else if(err instanceof Prisma.PrismaClientValidationError){
+        const prismaErrorResponse = handlePrismaClientValidationError(err);
+        statusCode = prismaErrorResponse.statusCode;
+        message = prismaErrorResponse.message;
+        errors = prismaErrorResponse.errorSources || [];
+    }else if(err instanceof Prisma.PrismaClientInitializationError){
+        const prismaErrorResponse = handlerPrismaClientInitializationError(err);
+        statusCode = prismaErrorResponse.statusCode;
+        message = prismaErrorResponse.message;
+        errors = prismaErrorResponse.errorSources || [];
+    }else if(err instanceof Prisma.PrismaClientRustPanicError){
+        const prismaErrorResponse = handlerPrismaClientRustPanicError();
+        statusCode = prismaErrorResponse.statusCode;
+        message = prismaErrorResponse.message;
+        errors = prismaErrorResponse.errorSources || [];
+    }else if(err instanceof z.ZodError){
         const zodError = zodErrorHelper(err);
         statusCode = zodError.statusCode;
         message = zodError.message;
