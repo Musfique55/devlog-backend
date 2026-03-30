@@ -1,10 +1,11 @@
 model Workspace {
     id        String    @id @default(uuid())
-    name      String
+    name      String    @db.VarChar(20)
     createdAt DateTime  @default(now())
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
     isDeleted Boolean   @default(false)
+    isActive  Boolean   @default(true)
 
     adminId String
     admin   User              @relation(fields: [adminId], references: [id])

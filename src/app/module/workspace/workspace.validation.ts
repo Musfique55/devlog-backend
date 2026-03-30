@@ -8,9 +8,9 @@ const validateWorkSpaceCreate = z.object({
 })
 
 const validateWorkSpaceUpdate = z.object({
-    name : z.string(
-        "name is required",
-    ).max(20,"name must be less than 20 characters")
+    name : z.string().max(20,"name must be less than 20 characters").optional(),
+    isActive : z.boolean().optional(),
+    isDeleted : z.boolean().optional()
 })
 
 export const workspaceValidation = {

@@ -222,6 +222,7 @@ const deleteWorkSpace = async (id: string,user : IRequestUser) => {
       data: {
         isDeleted: true,
         deletedAt: new Date(),
+        isActive : false,
       },
     });
     return result;
@@ -230,9 +231,8 @@ const deleteWorkSpace = async (id: string,user : IRequestUser) => {
   }
 };
 
-const updateWorkSpace = async (id: string, data: Partial<Workspace>) => {
+const updateWorkSpace = async (id: string, data: Partial<Workspace>, user: IRequestUser) => {
   try {
-    console.log(id);
     const workspace = await prisma.workspace.findUnique({
       where: {
         id,
@@ -243,6 +243,16 @@ const updateWorkSpace = async (id: string, data: Partial<Workspace>) => {
     if (!workspace) {
       throw new AppError("workspace not found", status.NOT_FOUND);
     }
+
+    if(user.role !== APP_ROLE.SUPER_ADMIN){
+      const restrictedFields = [ "isDeleted", "isActive" ];
+      Object.keys(data).forEach((key) => {
+        if (restrictedFields.includes(key)) {
+          delete data[key as keyof Workspace];
+        }
+      });
+    }
+
     const result = await prisma.workspace.update({
       where: {
         id,
@@ -254,6 +264,10 @@ const updateWorkSpace = async (id: string, data: Partial<Workspace>) => {
     throw error;
   }
 };
+
+
+
+
 
 export const workspaceService = {
   createWorkspace,

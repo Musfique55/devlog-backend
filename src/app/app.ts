@@ -15,6 +15,7 @@ import { IQueryParams } from './types/queryBuilder.types';
 import { prisma } from '../lib/prisma';
 import { sendEmail } from './utils/sendEmail';
 import { getWeekRange } from './utils/getWeekRange';
+import { PLAN } from '../generated/prisma/client/enums';
 
 dotenv.config();
 
@@ -38,9 +39,11 @@ cron.schedule("0 0 * * *",async () => {
 cron.schedule("0 9 * * 5", async () => {
     const workspaces = await prisma.workspace.findMany({
       where : {
+        isDeleted : false,
+        isActive : true,
         admin : {
           isBlocked : false,
-          plan : "PRO"
+          plan : PLAN.PRO
         }
       },
       include : {

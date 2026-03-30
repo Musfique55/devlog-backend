@@ -83,6 +83,7 @@ const updateWorkSpace = catchAsync(async (req: Request, res: Response) => {
   const data = await workspaceService.updateWorkSpace(
     req.params.workspaceId as string,
     req.body,
+    req.user as IRequestUser
   );
   sendResponse(res, {
     statusCode: status.OK,
