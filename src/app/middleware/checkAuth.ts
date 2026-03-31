@@ -9,6 +9,7 @@ import { envVars } from "../config/env";
 
 export interface IRequestUser {
   id: string;
+  name : string;
   email: string;
   role: APP_ROLE;
   plan: string;
@@ -20,6 +21,7 @@ declare global {
     interface Request {
       user?: {
         id: string;
+        name : string;
         email: string;
         role: APP_ROLE;
         plan: string;
@@ -97,6 +99,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
     }
     req.user = {
       id: session.user.id,
+      name : session.user.name,
       email: session.user.email,
       role: session.user.role,
       plan: session.user.plan,

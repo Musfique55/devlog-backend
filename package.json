@@ -12,7 +12,8 @@
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
-    "seed:admin": "tsx src/app/scripts/admin.ts"
+    "seed:admin": "tsx src/app/scripts/admin.ts",
+    "stripe:webhook" : "stripe listen --forward-to localhost:5000/webhook"
   },
   "keywords": [],
   "author": "",
