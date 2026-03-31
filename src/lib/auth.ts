@@ -1,16 +1,20 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, env } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { APP_ROLE, PLAN } from "../generated/prisma/client/enums";
-import { bearer } from "better-auth/plugins";
+import { bearer, oAuthProxy } from "better-auth/plugins";
 import { sendEmail } from "../app/utils/sendEmail";
 import { InviteStatus } from "../generated/prisma/enums";
+import { envVars } from "../app/config/env";
 
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  baseUrl: envVars.FRONTEND_URL!,
+  trustedOrigins : [envVars.FRONTEND_URL!],
+  secret: envVars.BETTER_AUTH_SECRET!,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -39,8 +43,6 @@ export const auth = betterAuth({
         })
     },
   },
-  secret: process.env.BETTER_AUTH_SECRET!,
-  baseUrl: process.env.BETTER_AUTH_URL!,
   user: {
     additionalFields: {
       role: {
@@ -93,7 +95,7 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [bearer()],
+  plugins: [bearer(),oAuthProxy()],
   session: {
     expiresIn: 60 * 60 * 24, // 24 hours
     updateAge: 60 * 60 * 24, // 24 hours
@@ -106,6 +108,7 @@ export const auth = betterAuth({
     useSecureCookies: true,
     cookies: {
       state: {
+        name : "session_token",
         attributes: {
           httpOnly: true,
           secure: true,
@@ -114,6 +117,7 @@ export const auth = betterAuth({
         },
       },
       sessionToken: {
+        name : "session_token",
         attributes: {
           httpOnly: true,
           secure: true,
