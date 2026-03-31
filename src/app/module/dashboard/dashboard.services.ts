@@ -205,6 +205,8 @@ const dashboardForSuperAdmin = async (user: IRequestUser) => {
     throw error;
   }
 };
+
+
 export const dashboardServices = {
   dashboardForSoloUser,
   dashboardForTeamUser,
