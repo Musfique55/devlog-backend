@@ -10,7 +10,7 @@ const router = Router();
 
 router.post("/login", zodRequestValidation(authSchemas.loginSchema) ,authController.loginUser);
 router.post("/register", zodRequestValidation(authSchemas.registerSchema), authController.registerUser);
-router.patch("/update-profile", multerStorage.single("image"),checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), 
+router.patch("/update-profile", multerStorage.single("file"),checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), 
 zodRequestValidation(authSchemas.updateProfileSchema), authController.updateProfile);
 router.get("/refresh-token",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),authController.getNewTokens);
 router.post("/logout", checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), authController.logoutUser);
