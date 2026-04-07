@@ -1,4 +1,4 @@
-import { betterAuth, env } from "better-auth";
+import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { APP_ROLE, PLAN } from "../generated/prisma/client/enums";
@@ -38,7 +38,7 @@ export const auth = betterAuth({
             templateName : "emailVerify",
             templateData : {
                 name : user.name,
-                verifyUrl : url,
+                verifyUrl : url.replace(`${envVars.BETTER_AUTH_URL}/api/auth`,envVars.FRONTEND_URL),
             }
         })
     },

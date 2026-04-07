@@ -9,8 +9,9 @@ import { envVars } from "../config/env";
 
 export interface IRequestUser {
   id: string;
-  name : string;
+  name: string;
   email: string;
+  emailVerified: boolean;
   role: APP_ROLE;
   plan: string;
   isBlocked: boolean;
@@ -21,7 +22,8 @@ declare global {
     interface Request {
       user?: {
         id: string;
-        name : string;
+        name: string;
+        emailVerified : boolean;
         email: string;
         role: APP_ROLE;
         plan: string;
@@ -33,7 +35,10 @@ declare global {
 
 export const checkAuth = (...roles: APP_ROLE[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const sessionToken = req.cookies["better-auth.session_token"] || req.cookies["__Secure-better-auth.session_token"];
+    const sessionToken =
+      req.cookies["better-auth.session_token"] ||
+      req.cookies["__Secure-better-auth.session_token"];
+
 
     if (!sessionToken) {
       throw new AppError(
@@ -52,24 +57,26 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
     });
 
     if (session && session.user && !session.user.isBlocked) {
+      const user = session.user;
 
-    const user = session.user;
+      const now = new Date();
+      const sessionExpiry = new Date(session.createdAt);
+      const sessionCreatedAt = new Date(session.createdAt);
 
-    const now = new Date();
-    const sessionExpiry = new Date(session.createdAt);
-    const sessionCreatedAt = new Date(session.createdAt);
+      const sessionLife = sessionExpiry.getTime() - sessionCreatedAt.getTime();
+      const sessionTimeRemaining = sessionExpiry.getTime() - now.getTime();
 
-    const sessionLife = sessionExpiry.getTime() - sessionCreatedAt.getTime();
-    const sessionTimeRemaining = sessionExpiry.getTime() - now.getTime();
+      const sessionPercentageRemaining =
+        (sessionTimeRemaining / sessionLife) * 100;
 
-    const sessionPercentageRemaining = (sessionTimeRemaining / sessionLife) * 100;
-
-    if (sessionPercentageRemaining <= 20) {
+      if (sessionPercentageRemaining <= 20) {
         res.setHeader("X-Session-Expiring-Soon", "true");
         res.setHeader("X-Session-Expires-At", sessionExpiry.toISOString());
-        res.setHeader("X-Session-Percentage-Remaining", sessionPercentageRemaining.toString());
-    }
-
+        res.setHeader(
+          "X-Session-Percentage-Remaining",
+          sessionPercentageRemaining.toString(),
+        );
+      }
 
       if (roles.length > 0 && !roles.includes(user.role)) {
         throw new AppError(
@@ -97,9 +104,10 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
     }
     req.user = {
       id: session.user.id,
-      name : session.user.name,
+      name: session.user.name,
       email: session.user.email,
       role: session.user.role,
+      emailVerified: session.user.emailVerified,
       plan: session.user.plan,
       isBlocked: session.user.isBlocked,
     };

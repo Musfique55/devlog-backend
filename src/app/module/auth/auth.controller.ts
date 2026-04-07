@@ -51,6 +51,7 @@ const getMe = catchAsync(async (req : Request, res : Response) => {
 const registerUser = catchAsync(async (req : Request, res : Response) => {
     const { name, email, password,inviteToken } = req.body;
     const data = await authService.registerUser({ name, email, password,inviteToken });
+    
     if(inviteToken){
         await inviteServices.acceptInvite(inviteToken);
     }

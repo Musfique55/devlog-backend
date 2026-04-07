@@ -30,6 +30,8 @@ const loginUser = async (payload: { email: string; password: string }) => {
       email: data.user.email,
       role: data.user.role,
       plan: data.user.plan,
+      isBlocked: data.user.isBlocked,
+      emailVerified: data.user.emailVerified
     };
     const accessToken = tokenUtils.createAccessToken(payloadForToken);
     const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
@@ -93,10 +95,12 @@ const registerUser = async (payload: {
       email: data.user.email,
       role: data.user.role,
       plan: data.user.plan,
+      isBlocked: data.user.isBlocked,
+      emailVerified: data.user.emailVerified,
     };
     const accessToken = tokenUtils.createAccessToken(payloadForToken);
     const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
-
+    
     return {
       ...data,
       accessToken,
