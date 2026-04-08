@@ -6,14 +6,14 @@ import { bearer, oAuthProxy } from "better-auth/plugins";
 import { sendEmail } from "../app/utils/sendEmail";
 import { InviteStatus } from "../generated/prisma/enums";
 import { envVars } from "../app/config/env";
-
+import { tokenUtils } from "../app/utils/token";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
   baseUrl: envVars.FRONTEND_URL!,
-  trustedOrigins : [envVars.FRONTEND_URL!],
+  trustedOrigins: [envVars.FRONTEND_URL!],
   secret: envVars.BETTER_AUTH_SECRET!,
   emailAndPassword: {
     enabled: true,
@@ -23,25 +23,49 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-        const invitedUser = await prisma.invite.findFirst({
-          where : {
-            email : user.email,
-            status : InviteStatus.PENDING
-          },
-        })
+      const invitedUser = await prisma.invite.findFirst({
+        where: {
+          email: user.email,
+          status: InviteStatus.PENDING,
+        },
+      });
 
-        if(invitedUser) return;
+      if (invitedUser) return;
 
-        await sendEmail({
-            to : user.email,
-            subject : "email verification link",
-            templateName : "emailVerify",
-            templateData : {
-                name : user.name,
-                verifyUrl : url.replace(`${envVars.BETTER_AUTH_URL}/api/auth`,envVars.FRONTEND_URL),
-            }
-        })
+      await sendEmail({
+        to: user.email,
+        subject: "email verification link",
+        templateName: "emailVerify",
+        templateData: {
+          name: user.name,
+          verifyUrl: url.replace(
+            `${envVars.BETTER_AUTH_URL}/api/auth`,
+            envVars.FRONTEND_URL,
+          ),
+        },
+      });
     },
+    // async afterEmailVerification(user,request) {
+    //   const thisUser = await prisma.user.findUniqueOrThrow({
+    //     where: {
+    //       email: user.email,
+    //     },
+    //   });
+
+    //   const payloadForToken = {
+    //     userId: thisUser.id,
+    //     email: thisUser.email,
+    //     role: thisUser.role,
+    //     plan: thisUser.plan,
+    //     isBlocked: thisUser.isBlocked,
+    //     emailVerified: thisUser.emailVerified,
+    //   };
+
+    //   const accessToken = tokenUtils.createAccessToken(payloadForToken);
+    //   const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
+      
+    //   request.
+    // },
   },
   user: {
     additionalFields: {
@@ -53,20 +77,20 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: PLAN.FREE,
       },
-      currentStreak : {
-        type : "number",
-        defaultValue : 0,
-        required : false
+      currentStreak: {
+        type: "number",
+        defaultValue: 0,
+        required: false,
       },
-      longestStreak : {
-        type : "number",
-        defaultValue : 0,
-        required : false
+      longestStreak: {
+        type: "number",
+        defaultValue: 0,
+        required: false,
       },
-      lastLogDate : {
-        type : "date",
-        defaultValue : null,
-        required : false
+      lastLogDate: {
+        type: "date",
+        defaultValue: null,
+        required: false,
       },
       isBlocked: {
         type: "boolean",
@@ -78,10 +102,10 @@ export const auth = betterAuth({
         defaultValue: null,
         required: false,
       },
-      blockedAt : {
-        type : "date",
-        defaultValue : null,
-        required : false
+      blockedAt: {
+        type: "date",
+        defaultValue: null,
+        required: false,
       },
       isDeleted: {
         type: "boolean",
@@ -95,7 +119,7 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [bearer(),oAuthProxy()],
+  plugins: [bearer(), oAuthProxy()],
   session: {
     expiresIn: 60 * 60 * 24, // 24 hours
     updateAge: 60 * 60 * 24, // 24 hours
@@ -108,7 +132,7 @@ export const auth = betterAuth({
     useSecureCookies: true,
     cookies: {
       state: {
-        name : "session_token",
+        name: "session_token",
         attributes: {
           httpOnly: true,
           secure: true,
@@ -117,7 +141,7 @@ export const auth = betterAuth({
         },
       },
       sessionToken: {
-        name : "session_token",
+        name: "session_token",
         attributes: {
           httpOnly: true,
           secure: true,

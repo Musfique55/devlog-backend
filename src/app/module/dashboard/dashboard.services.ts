@@ -49,7 +49,7 @@ const dashboardForSoloUser = async (loggedUser: IRequestUser) => {
             equals: null,
           },
         },
-        take: 5,
+        take: 3,
         orderBy: {
           createdAt: "desc",
         },
@@ -58,7 +58,7 @@ const dashboardForSoloUser = async (loggedUser: IRequestUser) => {
           todayWork: true,
           tomorrowWork: true,
           blocker: true,
-          projectTag: true,
+          projectTags: true,
           createdAt: true,
         },
       }),

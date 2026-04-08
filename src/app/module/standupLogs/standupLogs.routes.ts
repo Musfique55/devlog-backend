@@ -1,10 +1,12 @@
-import { NextFunction, Request, Response, Router } from "express";
+import {  Router } from "express";
 import { checkAuth } from "../../middleware/checkAuth";
 import { APP_ROLE, TEAM_ROLE } from "../../../generated/prisma/enums";
 import { StandupLogController } from "./standupLogs.controller";
 import { teamAuth } from "../../middleware/TeamAuth";
 import { multerStorage } from "../../config/multer.config";
 import { standupLogBlockerImageUploadMiddleware } from "./standup.middleware";
+import zodRequestValidation from "../../helper/zodRequestValidation";
+import {  logValidator } from "./standupLogs.validator";
 
 const router = Router();
 
@@ -13,6 +15,7 @@ router.post(
   checkAuth(APP_ROLE.USER),
   multerStorage.array("files",3),
   standupLogBlockerImageUploadMiddleware,
+  zodRequestValidation(logValidator.createLogSchema),
   StandupLogController.createLog,
 );
 router.patch("/:id", checkAuth(APP_ROLE.USER), StandupLogController.updateLog);

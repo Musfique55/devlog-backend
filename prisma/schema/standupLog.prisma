@@ -10,7 +10,7 @@ model StandupLogs{
     tomorrowWork  String
     blocker     String?
     blockerUrl  String[]
-    projectTag  String?
+    projectTags  String[]
 
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt

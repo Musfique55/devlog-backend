@@ -78,14 +78,15 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       );
     }
 
+
     const result = await prisma.standupLogs.create({
       data: {
+        userId,
         todayWork: payload.todayWork,
         tomorrowWork: payload.tomorrowWork,
         blocker: payload.blocker || null,
         blockerUrl: payload.blockerUrl || [],
-        projectTag: payload.projectTag || null,
-        userId,
+        projectTags: payload.projectTags || [],
         workspaceId: payload.workspaceId || null,
       },
       include: {
@@ -174,7 +175,7 @@ const updateLog = async (
         todayWork: payload.todayWork,
         tomorrowWork: payload.tomorrowWork,
         blocker: payload.blocker || null,
-        projectTag: payload.projectTag || null,
+        projectTags: payload.projectTags || [],
       },
     });
 
