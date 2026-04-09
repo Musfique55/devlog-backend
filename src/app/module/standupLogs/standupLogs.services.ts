@@ -78,7 +78,6 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       );
     }
 
-
     const result = await prisma.standupLogs.create({
       data: {
         userId,
@@ -205,8 +204,8 @@ const deleteLog = async (id: string, user: IRequestUser) => {
     }
 
     if (
-      log.user.id !== user.id ||
-      user.role !== APP_ROLE.SUPER_ADMIN ||
+      log.userId !== user.id ||
+      user.role === APP_ROLE.SUPER_ADMIN ||
       log.id !== id
     ) {
       throw new AppError(
@@ -295,26 +294,63 @@ const getLogs = async (query: IQueryParams, userId: string) => {
       throw new AppError("User not found", status.NOT_FOUND);
     }
 
-    const historyFilter =
-      user.plan === PLAN.FREE
+    const additionalFilters: Prisma.StandupLogsWhereInput[] = [];
+
+    const queryWhere =
+      user.plan === "FREE"
         ? {
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // last 30 days
-            },
             userId,
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            },
           }
         : { userId };
 
-    const builder = new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
-      .filter(historyFilter)
-      .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
-      .sort()
-      .paginate();
+    if (query.searchTerm && query.searchTerm !== "") {
+      additionalFilters.push({
+        todayWork: {
+          contains: query.searchTerm,
+          mode: "insensitive",
+        },
+      },{
+        tomorrowWork: {
+          contains: query.searchTerm,
+          mode: "insensitive",
+        }
+      },
+      {
+        blocker: {
+          contains: query.searchTerm,
+          mode: "insensitive",
+        }
+      },{
+         projectTags: {
+          hasSome: query.searchTerm.split(","),
+        },
+      }
+    );
+    }
 
     const [data, count] = await Promise.all([
-      prisma.standupLogs.findMany(builder.build()),
-      prisma.standupLogs.count(builder.getWhere()),
+      prisma.standupLogs.findMany({
+        where: {
+          ...queryWhere,
+          ...(additionalFilters.length >0 && {OR: additionalFilters})
+        },
+        take : Number(query.limit) || 10,
+        skip : Number(query.page) ? (Number(query.page) - 1) * Number(query.limit) : 0,
+        orderBy: {
+          [query.sortBy || "createdAt"]: query.sortOrder || "desc",
+        },
+      }),
+      prisma.standupLogs.count({
+        where: {
+          ...queryWhere,
+          ...(additionalFilters.length >0 && {OR: additionalFilters})
+        },
+      }),
     ]);
+
 
     return {
       data,
@@ -337,13 +373,13 @@ const getLogsByWorkspaceId = async (
   try {
     const queryBuilder = new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
       .filter({ workspaceId })
-      .search(["todayWork", "tomorrowWork", "projectTag", "blocker"])
+      .search(["todayWork", "tomorrowWork", "projectTags", "blocker"])
       .sort()
       .paginate();
 
     const [data, count] = await Promise.all([
       prisma.standupLogs.findMany(queryBuilder.build()),
-      prisma.standupLogs.count(queryBuilder.getWhere()),
+      prisma.standupLogs.count(queryBuilder.count()),
     ]);
 
     return {
@@ -378,7 +414,7 @@ const getAllBlockerLogs = async (
       .paginate();
     const [data, count] = await Promise.all([
       prisma.standupLogs.findMany(queryBuilder.build()),
-      prisma.standupLogs.count(queryBuilder.getWhere()),
+      prisma.standupLogs.count(queryBuilder.count()),
     ]);
 
     return {

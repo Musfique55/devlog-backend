@@ -15,40 +15,55 @@ export class QueryBuilder<T extends Record<string, any>> {
   search(fields: string[] = []): this {
     const searchTerm = this.queryParams.searchTerm;
     if (searchTerm && fields && fields.length > 0) {
-      const searchableConditions : Record<string,any>[] = fields.map((field) => {
-        const parts = field.split(".");
-        const refined = decodeURIComponent(searchTerm);
-        const stringFilter = {
-          contains: refined,
-          mode: "insensitive",
-        };
-        if(parts.length === 2){
-          const [relation,field] = parts;
-          return {
-            [relation!]: {
-              [field!]: stringFilter,
-            },
+      const searchableConditions: Record<string, any>[] = fields.map(
+        (field) => {
+          const isArray = field.endsWith("[]");
+          const parts = field.split(".");
+          const refined = decodeURIComponent(searchTerm);
+          const stringFilter = {
+            contains: refined,
+            mode: "insensitive",
           };
-        }else{
-          return {
-            [field]: stringFilter,
+          if (isArray) {
+            const fieldWithoutArray = field.slice(0, -2);
+            return {
+              [fieldWithoutArray]: {
+                hasSome: [refined],
+              },
+            };
+          } else {
+            if (parts.length === 2) {
+              const [relation, field] = parts;
+              return {
+                [relation!]: {
+                  [field!]: stringFilter,
+                },
+              };
+            } else {
+              return {
+                [field]: stringFilter,
+              };
+            }
           }
-        }
-      })
+        },
+      );
 
       this.query.where = {
         OR: searchableConditions,
-      }
+      };
     }
 
     return this;
   }
 
   filter(filers: Record<string, any>): this {
+    console.log(filers);
     this.query.where = {
       ...this.query.where,
       ...filers,
     };
+
+    console.log(this.query.where);
 
     return this;
   }
@@ -63,8 +78,8 @@ export class QueryBuilder<T extends Record<string, any>> {
     return this;
   }
 
-  sort(sortBy: string = "createdAt", sortOrder: string = "desc"): this {
-    this.query.orderBy[sortBy] = sortOrder;
+  sort(sortBy: string = "createdAt"): this {
+    this.query.orderBy[sortBy] = this.queryParams.sortOrder === "desc" ? "desc" : "asc";
     return this;
   }
 
@@ -104,8 +119,8 @@ export class QueryBuilder<T extends Record<string, any>> {
     return this.query.where;
   }
 
-  count () : {where : Record<string,any>}{
-    return {where : this.query.where};
+  count(): { where: Record<string, any> } {
+    return { where: this.query.where };
   }
 
   paginate(): this {
