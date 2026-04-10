@@ -17,6 +17,7 @@ import { getWeekRange } from "./utils/getWeekRange";
 import { PLAN } from "../generated/prisma/client/enums";
 import { paymentController } from "./module/payment/payment.controller";
 import { envVars } from "./config/env";
+import { paymentServices } from "./module/payment/payment.services";
 
 dotenv.config();
 
@@ -36,6 +37,8 @@ app.use("/api/auth", toNodeHandler(auth));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+
 
 cron.schedule("0 0 * * *", async () => {
   await inviteServices.updateExpiredTokens();
@@ -95,6 +98,10 @@ cron.schedule("0 9 * * 5", async () => {
     });
   }
 });
+
+cron.schedule("59 23 * * *",async () => {
+  await paymentServices.expiredSubscription();
+})
 
 app.get("/", async(req, res) => {
   res.status(200).json({

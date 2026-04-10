@@ -48,6 +48,11 @@ const stripeWebhook = async (event: Stripe.Event) => {
           },
           data: {
             plan: PLAN.PRO,
+            expiresAt: new Date(
+              new Date(paymentData.createdAt).setMonth(
+                new Date(paymentData.createdAt).getMonth() + 1,
+              ),
+            ),
           },
         });
         return paymentData;
@@ -94,6 +99,22 @@ const stripeWebhook = async (event: Stripe.Event) => {
   }
 };
 
+const expiredSubscription = async () => {
+  await prisma.user.updateMany({
+    where : {
+      plan : PLAN.PRO,
+      expiresAt : {
+        lt : new Date(),
+      }
+    },
+    data : {
+      plan : PLAN.FREE,
+      expiresAt : null,
+    }
+  })
+};
+
 export const paymentServices = {
   stripeWebhook,
+  expiredSubscription
 };

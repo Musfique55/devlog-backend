@@ -1,20 +1,18 @@
-model Payment{
-    id          String   @id @default(uuid())
-    userId      String
-    amount      Decimal @db.Decimal(10, 2)
-    transactionId String
-    stripeEventId String?
-    invoiceUrl   String?
-    status      PaymentStatus @default(PENDING)
+model Payment {
+    id                 String        @id @default(uuid())
+    userId             String
+    user               User          @relation(fields: [userId], references: [id])
+    transactionId      String
+    stripeEventId      String?
+    invoiceUrl         String?
+    status             PaymentStatus @default(PENDING)
     paymentGatewayData Json?
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    createdAt          DateTime      @default(now())
+    updatedAt          DateTime      @updatedAt
 }
 
-enum PaymentStatus{
+enum PaymentStatus {
     SUCCESS
     FAILED
     PENDING
 }
-
-

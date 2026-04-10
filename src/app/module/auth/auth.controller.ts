@@ -27,6 +27,7 @@ const updateProfile = catchAsync(async (req : Request, res : Response) => {
         ...req.body,
         image : req.file?.path
     }
+
     const data = await authService.updateProfile(userId, payload);
     sendResponse(res, {
         statusCode : status.OK,
