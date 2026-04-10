@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: #f4f4f5;
+        padding: 40px 20px;
+      }
+
+      .container {
+        max-width: 560px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .header {
+        background-color: #18181b;
+        padding: 32px;
+        text-align: center;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+      }
+
+      .logo span {
+        color: #6366f1;
+      }
+
+      .success-banner {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        padding: 40px 32px;
+        text-align: center;
+      }
+
+      .success-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+
+      .success-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 8px;
+      }
+
+      .success-sub {
+        font-size: 15px;
+        color: #bbf7d0;
+      }
+
+      .body {
+        padding: 40px 32px;
+      }
+
+      p {
+        font-size: 15px;
+        color: #52525b;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+
+      .blocker-card {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-left: 4px solid #16a34a;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 24px 0;
+      }
+
+      .blocker-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #16a34a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .blocker-text {
+        font-size: 15px;
+        color: #18181b;
+        line-height: 1.6;
+        margin: 0;
+      }
+
+      .details-card {
+        background-color: #fafafa;
+        border: 1px solid #e4e4e7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 24px 0;
+      }
+
+      .details-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #71717a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+      }
+
+      .details-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f4f4f5;
+        font-size: 14px;
+      }
+
+      .details-row:last-child {
+        border-bottom: none;
+      }
+
+      .details-label {
+        color: #71717a;
+      }
+
+      .details-value {
+        color: #18181b;
+        font-weight: 500;
+      }
+
+      .btn {
+        display: block;
+        background-color: #6366f1;
+        color: #ffffff !important;
+        text-decoration: none;
+        text-align: center;
+        padding: 14px 24px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        margin: 28px 0;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid #e4e4e7;
+        margin: 24px 0;
+      }
+
+      .footer {
+        background-color: #fafafa;
+        border-top: 1px solid #e4e4e7;
+        padding: 24px 32px;
+        text-align: center;
+      }
+
+      .footer p {
+        font-size: 13px;
+        color: #a1a1aa;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">Dev<span>Log</span></div>
+      </div>
+
+      <!-- Success Banner -->
+      <div class="success-banner">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Blocker Resolved!</div>
+        <div class="success-sub">You're unblocked and ready to ship</div>
+      </div>
+
+      <!-- Body -->
+      <div class="body">
+
+        <p>Hi <strong><%= memberName %></strong>,</p>
+
+        <p>
+          Great news! <strong><%= adminName %></strong> has resolved
+          your blocker in <strong><%= workspaceName %></strong>. You can
+          now continue your work.
+        </p>
+
+        <!-- Resolved Blocker -->
+        <div class="blocker-card">
+          <div class="blocker-label">✅ Resolved Blocker</div>
+          <p class="blocker-text"><%= blocker %></p>
+        </div>
+
+        <!-- Details -->
+        <div class="details-card">
+          <div class="details-title">📋 Details</div>
+          <div class="details-row">
+            <span class="details-label">Workspace</span>
+            <span class="details-value"><%= workspaceName %></span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Resolved by</span>
+            <span class="details-value"><%= adminName %></span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Resolved at</span>
+            <span class="details-value"><%= resolvedAt %></span>
+          </div>
+        </div>
+
+        <p>
+          Head back to your workspace and log your next standup when
+          you're ready:
+        </p>
+
+        <a href="<%= dashboardUrl %>" class="btn">
+          Go to Workspace →
+        </a>
+
+        <hr class="divider" />
+
+        <p style="font-size: 13px; color: #a1a1aa; text-align: center;">
+          Keep up the great work and maintain that streak! 🔥
+        </p>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          You received this because you are a member of
+          <strong><%= workspaceName %></strong> on DevLog.<br />
+          © 2026 DevLog. All rights reserved.
+        </p>
+      </div>
+
+    </div>
+  </body>
+</html>

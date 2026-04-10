@@ -1,5 +1,5 @@
 import status from "http-status";
-import { APP_ROLE, Prisma, TEAM_ROLE } from "../../../generated/prisma/client";
+import { APP_ROLE, BlockerStatus, Prisma, TEAM_ROLE } from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
 import { IQueryParams } from "../../types/queryBuilder.types";
@@ -7,7 +7,8 @@ import { QueryBuilder } from "../../utils/queryBuilder";
 import { sendEmail } from "../../utils/sendEmail";
 import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
 import { IRequestUser } from "../../middleware/checkAuth";
-import { PLAN } from "../../../generated/prisma/client/enums";
+import { envVars } from "../../config/env";
+
 
 const updateStreak = async (userId: string) => {
   try {
@@ -87,6 +88,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         blockerUrl: payload.blockerUrl || [],
         projectTags: payload.projectTags || [],
         workspaceId: payload.workspaceId || null,
+        ...(payload.blocker && {blockerStatus : BlockerStatus.OPEN})
       },
       include: {
         user: {
@@ -431,6 +433,60 @@ const getAllBlockerLogs = async (
   }
 };
 
+const updateBlockerStatus = async (logId: string, admin : IRequestUser) => {
+  try {
+    const log = await prisma.standupLogs.findUnique({
+      where: {
+        id: logId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if(!log){
+      throw new AppError("Log not found", status.NOT_FOUND);
+    }
+
+    const data = await prisma.standupLogs.update({
+      where: {
+        id: logId,
+      },
+      data: {
+        blockerStatus: BlockerStatus.RESOLVED,
+        blockerResolvedBy : admin.id,
+        blockerResolvedAt : new Date()
+      },
+      include: {
+        user: true,
+        workSpace : true
+      },  
+    })
+
+    await sendEmail({
+      subject: "Blocker Resolved",
+      to: log.user.id,
+      templateName: "blocker-resolved",
+      templateData: {
+        date: new Date().toLocaleDateString(),
+        memberName: data.user.name,
+        blocker: data.blocker,
+        adminName : admin.name,
+        workspaceName: data.workSpace!.name,
+        resolvedAt : data.blockerResolvedAt?.toLocaleDateString(),
+        dashboardUrl :`${envVars.FRONTEND_URL}/dashboard`
+      },
+    });
+
+  } catch (error) {
+    throw error;
+  }
+}
+
 const getWeeklyLogsReport = async (query: IQueryParams, userId: string) => {
   try {
     const oneWeekAgo = new Date();
@@ -533,4 +589,5 @@ export const StandupLogServices = {
   deleteLogFromWorkspace,
   getWeeklyLogsReport,
   standupLogCount,
+  updateBlockerStatus
 };

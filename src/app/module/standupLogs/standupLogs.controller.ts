@@ -21,7 +21,11 @@ const createLog = catchAsync(async (req: Request, res: Response) => {
 const updateLog = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const payload = req.body;
-  const result = await StandupLogServices.updateLog(id, payload,req.user as IRequestUser);
+  const result = await StandupLogServices.updateLog(
+    id,
+    payload,
+    req.user as IRequestUser,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
@@ -32,7 +36,7 @@ const updateLog = catchAsync(async (req: Request, res: Response) => {
 
 const deleteLog = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  await StandupLogServices.deleteLog(id,req.user as IRequestUser);
+  await StandupLogServices.deleteLog(id, req.user as IRequestUser);
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
@@ -40,17 +44,19 @@ const deleteLog = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const deleteLogFromWorkspace = catchAsync(async (req: Request, res: Response) => {
-  const id = req.params.id as string;
-  const workspaceId = req.params.workspaceId as string;
-  const user = req.user!;
-  await StandupLogServices.deleteLogFromWorkspace(id,workspaceId,user);
-  sendResponse(res, {
-    statusCode: status.OK,
-    success: true,
-    message: "Log deleted successfully",
-  });
-});
+const deleteLogFromWorkspace = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const workspaceId = req.params.workspaceId as string;
+    const user = req.user!;
+    await StandupLogServices.deleteLogFromWorkspace(id, workspaceId, user);
+    sendResponse(res, {
+      statusCode: status.OK,
+      success: true,
+      message: "Log deleted successfully",
+    });
+  },
+);
 
 const getLogById = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
@@ -65,38 +71,66 @@ const getLogById = catchAsync(async (req: Request, res: Response) => {
 
 const getLogs = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const result = await StandupLogServices.getLogs(req.query as IQueryParams,userId as string);
+  const result = await StandupLogServices.getLogs(
+    req.query as IQueryParams,
+    userId as string,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Logs fetched successfully",
     data: result.data,
-    meta : result.meta
+    meta: result.meta,
   });
 });
 
 const getLogsByWorkspaceId = catchAsync(async (req: Request, res: Response) => {
   const workspaceId = req.params.workspaceId as string;
-  const result = await StandupLogServices.getLogsByWorkspaceId(req.query as IQueryParams,workspaceId);
+  const result = await StandupLogServices.getLogsByWorkspaceId(
+    req.query as IQueryParams,
+    workspaceId,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Logs fetched successfully",
     data: result.data,
-    meta : result.meta
+    meta: result.meta,
   });
 });
 
 const getAllBlockerLogs = catchAsync(async (req: Request, res: Response) => {
-  const {workspaceId,blocker} = req.params as {blocker : string,workspaceId : string};
+  const { workspaceId, blocker } = req.params as {
+    blocker: string;
+    workspaceId: string;
+  };
   const refined = blocker.split("-").join(" ");
-  const result = await StandupLogServices.getAllBlockerLogs(req.query as IQueryParams,workspaceId,refined);
+  const result = await StandupLogServices.getAllBlockerLogs(
+    req.query as IQueryParams,
+    workspaceId,
+    refined,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "Logs fetched successfully",
     data: result.data,
-    meta : result.meta
+    meta: result.meta,
+  });
+});
+
+const updateBlockerStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const admin = req.user;
+  const result = await StandupLogServices.updateBlockerStatus(
+    id as string,
+    admin as IRequestUser,
+  );
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Blocker status updated successfully",
+    data : result
   });
 });
 
@@ -108,5 +142,6 @@ export const StandupLogController = {
   getLogs,
   getLogsByWorkspaceId,
   getAllBlockerLogs,
-  deleteLogFromWorkspace
+  deleteLogFromWorkspace,
+  updateBlockerStatus
 };
