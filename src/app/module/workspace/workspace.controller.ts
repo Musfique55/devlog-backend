@@ -9,7 +9,6 @@ import crypto from "crypto";
 import { IQueryParams } from "../../types/queryBuilder.types";
 import { IRequestUser } from "../../middleware/checkAuth";
 
-
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
   const { name } = req.body;
   const id = req.user!.id;
@@ -22,25 +21,29 @@ const createWorkspace = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const inviteMember = catchAsync(async(req : Request,res : Response) => {
-    const {email} = req.body;
-    const workspaceId = req.params.workspaceId as string;
-    const token = crypto.randomBytes(32).toString("hex");
-    const inviteUrl = `${envVars.FRONTEND_URL}/invite/accept?token=${token}`;
-    const result = await workspaceService.inviteMember(token,email,workspaceId,inviteUrl);
+const inviteMember = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const workspaceId = req.params.workspaceId as string;
+  const token = crypto.randomBytes(32).toString("hex");
+  const inviteUrl = `${envVars.FRONTEND_URL}/invite/accept?token=${token}`;
+  const result = await workspaceService.inviteMember(
+    token,
+    email,
+    workspaceId,
+    inviteUrl,
+  );
 
-    sendResponse(res,{
-        success : true,
-        statusCode : 200,
-        message : "invite send successfully",
-        data : result,
-    })
-
-})
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "invite send successfully",
+    data: result,
+  });
+});
 
 const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const data = await workspaceService.getWorkSpaceById(id as string);
+  const { workspaceId } = req.params;
+  const data = await workspaceService.getWorkSpaceById(workspaceId as string);
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace fetched successfully",
@@ -53,7 +56,9 @@ const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
   const id = req.user!.id;
   const role = req.user!.role;
   if (role === APP_ROLE.SUPER_ADMIN) {
-    const data = await workspaceService.getAllWorkSpaces(req.query as IQueryParams);
+    const data = await workspaceService.getAllWorkSpaces(
+      req.query as IQueryParams,
+    );
     sendResponse(res, {
       statusCode: status.OK,
       message: "workspaces fetched successfully",
@@ -61,7 +66,10 @@ const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
       data,
     });
   }
-  const data = await workspaceService.getWorkSpacesByUserId(req.query as IQueryParams,id);
+  const data = await workspaceService.getWorkSpacesByUserId(
+    req.query as IQueryParams,
+    id,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspaces fetched successfully",
@@ -70,8 +78,41 @@ const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getWorkspacesByUserId = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = req.user!.id;
+    const result = await workspaceService.getWorkSpacesByUserId(
+      req.query as IQueryParams,
+      id,
+    );
+    sendResponse(res, {
+      message: "users workspace fetched successfully",
+      success: true,
+      statusCode: status.OK,
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
+const getUsersOverallWorkspaceStats = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = req.user!.id;
+    const result = await workspaceService.getUsersOverallWorkspaceStats(id);
+    sendResponse(res, {
+      message: "user stats fetched successfully",
+      success: true,
+      statusCode: status.OK,
+      data: result,
+    });
+  },
+);
+
 const deleteWorkSpace = catchAsync(async (req: Request, res: Response) => {
-  await workspaceService.deleteWorkSpace(req.params.workspaceId as string,req.user as IRequestUser);
+  await workspaceService.deleteWorkSpace(
+    req.params.workspaceId as string,
+    req.user as IRequestUser,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace deleted successfully",
@@ -83,7 +124,7 @@ const updateWorkSpace = catchAsync(async (req: Request, res: Response) => {
   const data = await workspaceService.updateWorkSpace(
     req.params.workspaceId as string,
     req.body,
-    req.user as IRequestUser
+    req.user as IRequestUser,
   );
   sendResponse(res, {
     statusCode: status.OK,
@@ -100,4 +141,6 @@ export const workspaceController = {
   getAllWorkSpaces,
   deleteWorkSpace,
   updateWorkSpace,
+  getWorkspacesByUserId,
+  getUsersOverallWorkspaceStats
 };

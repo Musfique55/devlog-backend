@@ -36,9 +36,9 @@ declare global {
 export const checkAuth = (...roles: APP_ROLE[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const sessionToken =
-      req.cookies["better-auth.session_token"] ||
+      req.cookies["better-auth.session_token"] 
+      ||
       req.cookies["__Secure-better-auth.session_token"];
-
 
     if (!sessionToken) {
       throw new AppError(

@@ -4,6 +4,7 @@ import AppError from "../../helper/AppError";
 import { InviteStatus } from "../../../generated/prisma/enums";
 import { envVars } from "../../config/env";
 import { WorkspaceMember } from "../../../generated/prisma/client";
+import { sendEmail } from "../../utils/sendEmail";
 
 interface AcceptInviteResult {
   redirect: string | null;
@@ -38,7 +39,7 @@ const acceptInvite = async (token: string): Promise<AcceptInviteResult> => {
     if (!user) {
       return { redirect: `${envVars.FRONTEND_URL}/register?token=${token}` };
     }
-    
+
     const result = await prisma.$transaction(async (tx) => {
       const member = await tx.workspaceMember.create({
         data: {
@@ -64,6 +65,23 @@ const acceptInvite = async (token: string): Promise<AcceptInviteResult> => {
 };
 
 const updateExpiredTokens = async () => {
+  // expired users
+
+  const expiredUsers = await prisma.user.findMany({
+    where: {
+      expiresAt: {
+        lt: new Date(),
+      },
+    },
+    include: {
+      workspaces: true,
+    },
+  });
+
+  if (expiredUsers.length === 0) {
+    return;
+  }
+
   await prisma.invite.updateMany({
     where: {
       expiresAt: {
@@ -74,6 +92,19 @@ const updateExpiredTokens = async () => {
       status: InviteStatus.EXPIRED,
     },
   });
+
+  for(const user of expiredUsers){
+    await sendEmail({
+      subject: "Subscription Expired",
+      templateData: {
+        name : user.name,
+        upgradeUrl: `${envVars.FRONTEND_URL}/upgrade-plan`,
+      },
+      templateName: "subscription-expired",
+      to: user.email,
+    });
+  }
+
 };
 
 export const inviteServices = {

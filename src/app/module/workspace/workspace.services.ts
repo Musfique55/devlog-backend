@@ -1,5 +1,10 @@
 import status from "http-status";
-import { APP_ROLE, TEAM_ROLE, Workspace } from "../../../generated/prisma/client";
+import {
+  APP_ROLE,
+  BlockerStatus,
+  TEAM_ROLE,
+  Workspace,
+} from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
 import { sendEmail } from "../../utils/sendEmail";
@@ -18,6 +23,9 @@ const createWorkspace = async (name: string, userId: string) => {
         },
         include: {
           admin: true,
+        },
+        omit: {
+          adminId: true,
         },
       });
 
@@ -120,21 +128,12 @@ const getWorkSpaceById = async (id: string) => {
       where: {
         id,
       },
-      omit : {
-        adminId : true
+      omit: {
+        adminId: true,
       },
-      include : {
-        admin : {
-          select : {
-            id : true,
-            name : true,
-            email : true,
-            role : true,
-            createdAt : true,
-            updatedAt : true,
-          }
-        }
-      }
+      include: {
+        members: true,
+      },
     });
     return result;
   } catch (error) {
@@ -146,7 +145,7 @@ const getWorkSpaceById = async (id: string) => {
 const getAllWorkSpaces = async (query: IQueryParams) => {
   try {
     const builder = new QueryBuilder<WorkspaceFindManyArgs>(query)
-      .search(["name", "admin.name", "admin.email","admin.id"])
+      .search(["name", "admin.name", "admin.email", "admin.id"])
       .sort()
       .paginate();
 
@@ -170,24 +169,63 @@ const getAllWorkSpaces = async (query: IQueryParams) => {
 
 const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
   try {
-    const builder = new QueryBuilder<WorkspaceFindManyArgs>(query)
-      .sort()
-      .paginate()
-      .search(["name"])
-      .filter({
-        adminId: userId,
-      });
     const [data, count] = await Promise.all([
-      prisma.workspace.findMany(builder.build()),
-      prisma.workspace.count(builder.count())
+      prisma.workspace.findMany({
+        where: {
+          OR: [
+            {
+              adminId: userId,
+            },
+            {
+              members: {
+                some: {
+                  userId,
+                },
+              },
+            },
+          ],
+        },
+        include: {
+          members: true,
+          logs : {
+            where : {
+              createdAt : {
+                gte : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                lte : new Date()
+              }
+            }
+          }
+        },
+        take : Number(query.limit) || 10,
+        skip : (Number(query.page) || 1 - 1) * (Number(query.limit) || 10),
+        orderBy : {
+          createdAt : "desc"
+        }
+      }),
+      prisma.workspace.count({
+        where: {
+          OR: [
+            {
+              adminId: userId,
+            },
+            {
+              members: {
+                some: {
+                  userId,
+                },
+              },
+            },
+          ],
+        },
+      }),
     ]);
     return {
       data,
       meta: {
         total: count,
-        page: query.page,
+        page: Number(query.page) || 1,
         limit: Number(query.limit) || 10,
-        totalPages: Math.ceil(count / Number(query.limit || 10)),
+        totalPages: Math.ceil(count / Number(query.limit || 10)) || 1,
       },
     };
   } catch (error) {
@@ -195,25 +233,63 @@ const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
   }
 };
 
-const deleteWorkSpace = async (id: string,user : IRequestUser) => {
+const getUsersOverallWorkspaceStats = async (userId: string) => {
   try {
-    
+    const [totalLogs,avgStreak,totalBlockers] = await Promise.all([
+      prisma.standupLogs.count({
+        where : {
+          userId
+        }
+      }),
+      prisma.user.aggregate({
+        where : {
+          workspaceMembers : {
+            some : {
+              userId
+            }
+          }
+        },
+        _avg : {
+          currentStreak : true
+        }
+      }),
+      prisma.standupLogs.count({
+        where : {
+          userId,
+          blockerStatus : BlockerStatus.OPEN
+        }
+      })
+    ])
+
+    return {
+      totalLogs,
+      avgStreak : avgStreak._avg.currentStreak || 0,
+      totalBlockers
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+const deleteWorkSpace = async (id: string, user: IRequestUser) => {
+  try {
     const workspace = await prisma.workspace.findUnique({
       where: {
         id,
         isDeleted: false,
-      }
+      },
     });
-
 
     if (!workspace) {
       throw new AppError("workspace not found", status.NOT_FOUND);
     }
 
-    if(workspace.adminId !== user.id && user.role !== APP_ROLE.SUPER_ADMIN){
-      throw new AppError("you are not authorized to delete this workspace",status.UNAUTHORIZED);
+    if (workspace.adminId !== user.id && user.role !== APP_ROLE.SUPER_ADMIN) {
+      throw new AppError(
+        "you are not authorized to delete this workspace",
+        status.UNAUTHORIZED,
+      );
     }
-
 
     const result = await prisma.workspace.update({
       where: {
@@ -222,7 +298,7 @@ const deleteWorkSpace = async (id: string,user : IRequestUser) => {
       data: {
         isDeleted: true,
         deletedAt: new Date(),
-        isActive : false,
+        isActive: false,
       },
     });
     return result;
@@ -231,7 +307,11 @@ const deleteWorkSpace = async (id: string,user : IRequestUser) => {
   }
 };
 
-const updateWorkSpace = async (id: string, data: Partial<Workspace>, user: IRequestUser) => {
+const updateWorkSpace = async (
+  id: string,
+  data: Partial<Workspace>,
+  user: IRequestUser,
+) => {
   try {
     const workspace = await prisma.workspace.findUnique({
       where: {
@@ -244,8 +324,8 @@ const updateWorkSpace = async (id: string, data: Partial<Workspace>, user: IRequ
       throw new AppError("workspace not found", status.NOT_FOUND);
     }
 
-    if(user.role !== APP_ROLE.SUPER_ADMIN){
-      const restrictedFields = [ "isDeleted", "isActive" ];
+    if (user.role !== APP_ROLE.SUPER_ADMIN) {
+      const restrictedFields = ["isDeleted", "isActive"];
       Object.keys(data).forEach((key) => {
         if (restrictedFields.includes(key)) {
           delete data[key as keyof Workspace];
@@ -265,10 +345,6 @@ const updateWorkSpace = async (id: string, data: Partial<Workspace>, user: IRequ
   }
 };
 
-
-
-
-
 export const workspaceService = {
   createWorkspace,
   inviteMember,
@@ -277,4 +353,5 @@ export const workspaceService = {
   deleteWorkSpace,
   updateWorkSpace,
   getWorkSpacesByUserId,
+  getUsersOverallWorkspaceStats
 };
