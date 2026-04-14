@@ -57,13 +57,10 @@ export class QueryBuilder<T extends Record<string, any>> {
   }
 
   filter(filers: Record<string, any>): this {
-    console.log(filers);
     this.query.where = {
       ...this.query.where,
       ...filers,
     };
-
-    console.log(this.query.where);
 
     return this;
   }

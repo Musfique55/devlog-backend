@@ -377,6 +377,7 @@ const getLogsByWorkspaceId = async (
       .filter({ workspaceId })
       .search(["todayWork", "tomorrowWork", "projectTags", "blocker"])
       .sort()
+      .include("user",["user"])
       .paginate();
 
     const [data, count] = await Promise.all([

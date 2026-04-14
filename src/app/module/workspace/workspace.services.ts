@@ -132,7 +132,25 @@ const getWorkSpaceById = async (id: string) => {
         adminId: true,
       },
       include: {
-        members: true,
+        members: {
+          select : {
+            user : {
+              select : {
+                name : true,
+                email : true,
+                id : true,
+                image : true,
+              }
+            },
+            role : true,
+            createdAt : true,
+            deletedAt : true,
+            updatedAt : true,
+            id : true,
+            joinedAt : true,
+            workspaceId : true
+          }
+        },
       },
     });
     return result;
