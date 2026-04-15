@@ -17,7 +17,9 @@ router.get("/me/stats",checkAuth(APP_ROLE.USER),workspaceController.getUsersOver
 router.get("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN,TEAM_ROLE.MEMBER),workspaceController.getWorkSpaceById);
 router.get("/",checkAuth(APP_ROLE.SUPER_ADMIN),workspaceController.getAllWorkSpaces);
 router.delete("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN),workspaceController.deleteWorkSpace);
-router.patch("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),requiredPro,teamAuth(TEAM_ROLE.ADMIN),zodRequestValidation(workspaceValidation.validateWorkSpaceUpdate),workspaceController.updateWorkSpace)
+router.patch("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),requiredPro,teamAuth(TEAM_ROLE.ADMIN),zodRequestValidation(workspaceValidation.validateWorkSpaceUpdate),workspaceController.updateWorkSpace);
+router.get("/:workspaceId/members",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN),workspaceController.getWorkspaceMembers);
+
 
 
 

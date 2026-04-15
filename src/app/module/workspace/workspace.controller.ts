@@ -43,7 +43,7 @@ const inviteMember = catchAsync(async (req: Request, res: Response) => {
 
 const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
   const { workspaceId } = req.params;
-  const data = await workspaceService.getWorkSpaceById(workspaceId as string);
+  const data = await workspaceService.getWorkSpaceById(workspaceId as string,req.user as IRequestUser);
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace fetched successfully",
@@ -51,6 +51,17 @@ const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
     data,
   });
 });
+
+const getWorkspaceMembers = catchAsync(async (req: Request, res: Response) => {
+  const {workspaceId} = req.params;
+  const result = await workspaceService.getWorkspaceMembers(workspaceId as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "workspace members fetched successfully",
+    success: true,
+    data: result
+  })
+})
 
 const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
   const id = req.user!.id;
@@ -142,5 +153,6 @@ export const workspaceController = {
   deleteWorkSpace,
   updateWorkSpace,
   getWorkspacesByUserId,
-  getUsersOverallWorkspaceStats
+  getUsersOverallWorkspaceStats,
+  getWorkspaceMembers
 };

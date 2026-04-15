@@ -122,40 +122,67 @@ const inviteMember = async (
   }
 };
 
-const getWorkSpaceById = async (id: string) => {
+const getWorkSpaceById = async (workspaceId: string, user: IRequestUser) => {
   try {
     const result = await prisma.workspace.findUnique({
       where: {
-        id,
-      },
-      omit: {
-        adminId: true,
+        id : workspaceId,
+        isDeleted : false,
+        isActive : true
       },
       include: {
         members: {
-          select: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-                id: true,
-                image: true,
-              },
-            },
-            role: true,
-            createdAt: true,
-            deletedAt: true,
-            updatedAt: true,
-            id: true,
-            joinedAt: true,
-            workspaceId: true,
+          where: {
+            userId: user.id,
           },
+          select: { role: true },
         },
       },
     });
-    return result;
+
+    if (!result) {
+      throw new AppError("workspace not found", status.NOT_FOUND); 
+    }
+
+    const { members, ...rest } = result;
+    return {
+      ...rest,
+      userRole: result?.members[0]?.role,
+    };
   } catch (error) {
     console.log(error);
+    throw error;
+  }
+};
+
+const getWorkspaceMembers = async (id: string) => {
+  try {
+    const result = await prisma.workspaceMember.findMany({
+      where: {
+        workspaceId: id,
+        workspace: {
+          isDeleted: false,
+          isActive: true,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            id: true,
+            image: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return result;
+  } catch (error) {
     throw error;
   }
 };
@@ -384,4 +411,5 @@ export const workspaceService = {
   updateWorkSpace,
   getWorkSpacesByUserId,
   getUsersOverallWorkspaceStats,
+  getWorkspaceMembers,
 };
