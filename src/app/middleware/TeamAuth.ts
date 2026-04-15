@@ -20,6 +20,8 @@ export const teamAuth = (...roles: TEAM_ROLE[]) => {
         }
     });
 
+    console.log(teamMember);
+
     if (!teamMember) {
         throw new AppError("Unauthorized",status.UNAUTHORIZED);
     }  

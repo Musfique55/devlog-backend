@@ -104,6 +104,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
               select: {
                 email: true,
                 role: true,
+                plan : true
               },
             },
           },
@@ -111,7 +112,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       },
     });
 
-    if (result.blocker && result.workspaceId) {
+    if (result.blocker && result.workspaceId && result.workSpace?.admin.plan === "PRO") {
       const mail = await sendEmail({
         subject: "New Blocker",
         to: result.workSpace!.admin.email,
@@ -138,7 +139,20 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
 
     await updateStreak(userId);
 
+    if(result.workspaceId){
+      const {plan,...admin} = result.workSpace!.admin;
+      
+      return {
+        ...result,
+        workSpace : {
+          ...result.workSpace,
+          admin
+        }
+      };
+    }
+
     return result;
+
   } catch (error) {
     throw error;
   }

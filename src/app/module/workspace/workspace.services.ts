@@ -133,23 +133,23 @@ const getWorkSpaceById = async (id: string) => {
       },
       include: {
         members: {
-          select : {
-            user : {
-              select : {
-                name : true,
-                email : true,
-                id : true,
-                image : true,
-              }
+          select: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                id: true,
+                image: true,
+              },
             },
-            role : true,
-            createdAt : true,
-            deletedAt : true,
-            updatedAt : true,
-            id : true,
-            joinedAt : true,
-            workspaceId : true
-          }
+            role: true,
+            createdAt: true,
+            deletedAt: true,
+            updatedAt: true,
+            id: true,
+            joinedAt: true,
+            workspaceId: true,
+          },
         },
       },
     });
@@ -190,35 +190,39 @@ const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
     const [data, count] = await Promise.all([
       prisma.workspace.findMany({
         where: {
-          OR: [
-            {
-              adminId: userId,
-            },
-            {
-              members: {
-                some: {
-                  userId,
+          AND: {
+            OR: [
+              {
+                adminId: userId,
+              },
+              {
+                members: {
+                  some: {
+                    userId,
+                  },
                 },
               },
-            },
-          ],
+            ],
+            isDeleted: false,
+            isActive: true,
+          },
         },
         include: {
           members: true,
-          logs : {
-            where : {
-              createdAt : {
-                gte : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                lte : new Date()
-              }
-            }
-          }
+          logs: {
+            where: {
+              createdAt: {
+                gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                lte: new Date(),
+              },
+            },
+          },
         },
-        take : Number(query.limit) || 10,
-        skip : (Number(query.page) || 1 - 1) * (Number(query.limit) || 10),
-        orderBy : {
-          createdAt : "desc"
-        }
+        take: Number(query.limit) || 10,
+        skip: (Number(query.page) || 1 - 1) * (Number(query.limit) || 10),
+        orderBy: {
+          createdAt: "desc",
+        },
       }),
       prisma.workspace.count({
         where: {
@@ -253,41 +257,49 @@ const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
 
 const getUsersOverallWorkspaceStats = async (userId: string) => {
   try {
-    const [totalLogs,avgStreak,totalBlockers] = await Promise.all([
+    const [totalLogs, avgStreak, totalBlockers] = await Promise.all([
       prisma.standupLogs.count({
-        where : {
-          userId
-        }
+        where: {
+          userId,
+          workSpace: {
+            isDeleted: false,
+            isActive: true,
+          },
+        },
       }),
       prisma.user.aggregate({
-        where : {
-          workspaceMembers : {
-            some : {
-              userId
-            }
-          }
+        where: {
+          workspaceMembers: {
+            some: {
+              userId,
+            },
+          },
         },
-        _avg : {
-          currentStreak : true
-        }
+        _avg: {
+          currentStreak: true,
+        },
       }),
       prisma.standupLogs.count({
-        where : {
+        where: {
           userId,
-          blockerStatus : BlockerStatus.OPEN
-        }
-      })
-    ])
+          blockerStatus: BlockerStatus.OPEN,
+          workSpace: {
+            isDeleted: false,
+            isActive: true,
+          },
+        },
+      }),
+    ]);
 
     return {
       totalLogs,
-      avgStreak : avgStreak._avg.currentStreak || 0,
-      totalBlockers
-    }
+      avgStreak: avgStreak._avg.currentStreak || 0,
+      totalBlockers,
+    };
   } catch (error) {
     throw error;
   }
-}
+};
 
 const deleteWorkSpace = async (id: string, user: IRequestUser) => {
   try {
@@ -371,5 +383,5 @@ export const workspaceService = {
   deleteWorkSpace,
   updateWorkSpace,
   getWorkSpacesByUserId,
-  getUsersOverallWorkspaceStats
+  getUsersOverallWorkspaceStats,
 };

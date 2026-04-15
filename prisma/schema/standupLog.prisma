@@ -1,7 +1,7 @@
 model StandupLogs{
     id          String   @id @default(uuid())
     workspaceId String?
-    workSpace   Workspace? @relation(fields: [workspaceId], references: [id])
+    workSpace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
     userId      String 
     user       User @relation(fields: [userId], references: [id])
