@@ -1,5 +1,10 @@
 import status from "http-status";
-import { APP_ROLE, BlockerStatus, Prisma, TEAM_ROLE } from "../../../generated/prisma/client";
+import {
+  APP_ROLE,
+  BlockerStatus,
+  Prisma,
+  TEAM_ROLE,
+} from "../../../generated/prisma/client";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
 import { IQueryParams } from "../../types/queryBuilder.types";
@@ -8,7 +13,6 @@ import { sendEmail } from "../../utils/sendEmail";
 import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
 import { IRequestUser } from "../../middleware/checkAuth";
 import { envVars } from "../../config/env";
-
 
 const updateStreak = async (userId: string) => {
   try {
@@ -72,11 +76,59 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       throw new AppError("User not found", status.NOT_FOUND);
     }
 
-    if (user.isBlocked) {
+    if (user.isBlocked || user.isDeleted) {
       throw new AppError(
         "You are blocked. Please contact support.",
         status.FORBIDDEN,
       );
+    } else {
+      if (user.lastLogDate && !payload.workspaceId) {
+        if (
+          new Date(user.lastLogDate).toDateString() ===
+          new Date().toDateString()
+        ) {
+          throw new AppError(
+            "You have already logged today",
+            status.BAD_REQUEST,
+          );
+        }
+      }
+    }
+
+    if (payload.workspaceId) {
+      const workspace = await prisma.workspace.findUnique({
+        where: {
+          id: payload.workspaceId,
+        },
+      });
+
+      if (!workspace) {
+        throw new AppError("Workspace not found", status.NOT_FOUND);
+      }
+
+      const member = await prisma.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: {
+            userId,
+            workspaceId: payload.workspaceId,
+          },
+        },
+      });
+
+      if (!member) {
+        throw new AppError(
+          "You are not a member of this workspace",
+          status.FORBIDDEN,
+        );
+      }
+
+      if (
+        member.lastLogDate &&
+        new Date(member.lastLogDate).toDateString() ===
+          new Date().toDateString()
+      ) {
+        throw new AppError("You have already logged today", status.BAD_REQUEST);
+      }
     }
 
     const result = await prisma.standupLogs.create({
@@ -88,7 +140,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         blockerUrl: payload.blockerUrl || [],
         projectTags: payload.projectTags || [],
         workspaceId: payload.workspaceId || null,
-        ...(payload.blocker && {blockerStatus : BlockerStatus.OPEN})
+        ...(payload.blocker && { blockerStatus: BlockerStatus.OPEN }),
       },
       include: {
         user: {
@@ -104,7 +156,7 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
               select: {
                 email: true,
                 role: true,
-                plan : true
+                plan: true,
               },
             },
           },
@@ -112,7 +164,11 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       },
     });
 
-    if (result.blocker && result.workspaceId && result.workSpace?.admin.plan === "PRO") {
+    if (
+      result.blocker &&
+      result.workspaceId &&
+      result.workSpace?.admin.plan === "PRO"
+    ) {
       const mail = await sendEmail({
         subject: "New Blocker",
         to: result.workSpace!.admin.email,
@@ -137,22 +193,35 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       }
     }
 
-    await updateStreak(userId);
+    if (!result.workspaceId) {
+      await updateStreak(userId);
+    } else {
+      await prisma.workspaceMember.update({
+        where: {
+          workspaceId_userId: {
+            workspaceId: result.workspaceId,
+            userId,
+          },
+        },
+        data: {
+          lastLogDate: new Date(),
+        },
+      });
+    }
 
-    if(result.workspaceId){
-      const {plan,...admin} = result.workSpace!.admin;
-      
+    if (result.workspaceId) {
+      const { plan, ...admin } = result.workSpace!.admin;
+
       return {
         ...result,
-        workSpace : {
+        workSpace: {
           ...result.workSpace,
-          admin
-        }
+          admin,
+        },
       };
     }
 
     return result;
-
   } catch (error) {
     throw error;
   }
@@ -323,38 +392,43 @@ const getLogs = async (query: IQueryParams, userId: string) => {
         : { userId };
 
     if (query.searchTerm && query.searchTerm !== "") {
-      additionalFilters.push({
-        todayWork: {
-          contains: query.searchTerm,
-          mode: "insensitive",
+      additionalFilters.push(
+        {
+          todayWork: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
         },
-      },{
-        tomorrowWork: {
-          contains: query.searchTerm,
-          mode: "insensitive",
-        }
-      },
-      {
-        blocker: {
-          contains: query.searchTerm,
-          mode: "insensitive",
-        }
-      },{
-         projectTags: {
-          hasSome: query.searchTerm.split(","),
+        {
+          tomorrowWork: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
         },
-      }
-    );
+        {
+          blocker: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          projectTags: {
+            hasSome: query.searchTerm.split(","),
+          },
+        },
+      );
     }
 
     const [data, count] = await Promise.all([
       prisma.standupLogs.findMany({
         where: {
           ...queryWhere,
-          ...(additionalFilters.length >0 && {OR: additionalFilters})
+          ...(additionalFilters.length > 0 && { OR: additionalFilters }),
         },
-        take : Number(query.limit) || 10,
-        skip : Number(query.page) ? (Number(query.page) - 1) * Number(query.limit) : 0,
+        take: Number(query.limit) || 10,
+        skip: Number(query.page)
+          ? (Number(query.page) - 1) * Number(query.limit)
+          : 0,
         orderBy: {
           [query.sortBy || "createdAt"]: query.sortOrder || "desc",
         },
@@ -362,11 +436,10 @@ const getLogs = async (query: IQueryParams, userId: string) => {
       prisma.standupLogs.count({
         where: {
           ...queryWhere,
-          ...(additionalFilters.length >0 && {OR: additionalFilters})
+          ...(additionalFilters.length > 0 && { OR: additionalFilters }),
         },
       }),
     ]);
-
 
     return {
       data,
@@ -387,16 +460,37 @@ const getLogsByWorkspaceId = async (
   workspaceId: string,
 ) => {
   try {
-    const queryBuilder = new QueryBuilder<Prisma.StandupLogsFindManyArgs>(query)
-      .filter({ workspaceId })
-      .search(["todayWork", "tomorrowWork", "projectTags", "blocker"])
-      .sort()
-      .include("user",["user"])
-      .paginate();
+    const additionalFilters: Prisma.StandupLogsWhereInput[] = [];
 
     const [data, count] = await Promise.all([
-      prisma.standupLogs.findMany(queryBuilder.build()),
-      prisma.standupLogs.count(queryBuilder.count()),
+      prisma.standupLogs.findMany({
+        where: {
+          workspaceId,
+          ...(query.searchTerm && {
+            OR: additionalFilters,
+          }),
+        },
+        omit: {
+          userId: true,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      }),
+      prisma.standupLogs.count({
+        where: {
+          workspaceId,
+          ...(query.searchTerm && {
+            OR: additionalFilters,
+          }),
+        },
+      }),
     ]);
 
     return {
@@ -448,7 +542,7 @@ const getAllBlockerLogs = async (
   }
 };
 
-const updateBlockerStatus = async (logId: string, admin : IRequestUser) => {
+const updateBlockerStatus = async (logId: string, admin: IRequestUser) => {
   try {
     const log = await prisma.standupLogs.findUnique({
       where: {
@@ -463,7 +557,7 @@ const updateBlockerStatus = async (logId: string, admin : IRequestUser) => {
       },
     });
 
-    if(!log){
+    if (!log) {
       throw new AppError("Log not found", status.NOT_FOUND);
     }
 
@@ -473,14 +567,14 @@ const updateBlockerStatus = async (logId: string, admin : IRequestUser) => {
       },
       data: {
         blockerStatus: BlockerStatus.RESOLVED,
-        blockerResolvedBy : admin.id,
-        blockerResolvedAt : new Date()
+        blockerResolvedBy: admin.id,
+        blockerResolvedAt: new Date(),
       },
       include: {
         user: true,
-        workSpace : true
-      },  
-    })
+        workSpace: true,
+      },
+    });
 
     await sendEmail({
       subject: "Blocker Resolved",
@@ -490,17 +584,16 @@ const updateBlockerStatus = async (logId: string, admin : IRequestUser) => {
         date: new Date().toLocaleDateString(),
         memberName: data.user.name,
         blocker: data.blocker,
-        adminName : admin.name,
+        adminName: admin.name,
         workspaceName: data.workSpace!.name,
-        resolvedAt : data.blockerResolvedAt?.toLocaleDateString(),
-        dashboardUrl :`${envVars.FRONTEND_URL}/dashboard`
+        resolvedAt: data.blockerResolvedAt?.toLocaleDateString(),
+        dashboardUrl: `${envVars.FRONTEND_URL}/dashboard`,
       },
     });
-
   } catch (error) {
     throw error;
   }
-}
+};
 
 const getWeeklyLogsReport = async (query: IQueryParams, userId: string) => {
   try {
@@ -604,5 +697,5 @@ export const StandupLogServices = {
   deleteLogFromWorkspace,
   getWeeklyLogsReport,
   standupLogCount,
-  updateBlockerStatus
+  updateBlockerStatus,
 };

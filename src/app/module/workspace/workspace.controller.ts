@@ -8,6 +8,7 @@ import { envVars } from "../../config/env";
 import crypto from "crypto";
 import { IQueryParams } from "../../types/queryBuilder.types";
 import { IRequestUser } from "../../middleware/checkAuth";
+import { get } from "http";
 
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
   const { name } = req.body;
@@ -54,13 +55,23 @@ const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
 
 const getWorkspaceMembers = catchAsync(async (req: Request, res: Response) => {
   const {workspaceId} = req.params;
-  const result = await workspaceService.getWorkspaceMembers(workspaceId as string);
+  const result = await workspaceService.getWorkspaceMembers(workspaceId as string,req.query as IQueryParams);
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace members fetched successfully",
     success: true,
     data: result
   })
+})
+
+const getWorkspaceStats = catchAsync(async (req: Request, res: Response) => {
+  const result = await workspaceService.getWorkspaceStats(req.params.workspaceId as string);
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "workspace stats fetched successfully",
+    success: true,
+    data: result
+  });
 })
 
 const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
@@ -154,5 +165,6 @@ export const workspaceController = {
   updateWorkSpace,
   getWorkspacesByUserId,
   getUsersOverallWorkspaceStats,
-  getWorkspaceMembers
+  getWorkspaceMembers,
+  getWorkspaceStats
 };

@@ -6,7 +6,7 @@ import { bearer, oAuthProxy } from "better-auth/plugins";
 import { sendEmail } from "../app/utils/sendEmail";
 import { InviteStatus } from "../generated/prisma/enums";
 import { envVars } from "../app/config/env";
-import { tokenUtils } from "../app/utils/token";
+
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {

@@ -2,6 +2,7 @@ import status from "http-status";
 import {
   APP_ROLE,
   BlockerStatus,
+  Prisma,
   TEAM_ROLE,
   Workspace,
 } from "../../../generated/prisma/client";
@@ -126,9 +127,9 @@ const getWorkSpaceById = async (workspaceId: string, user: IRequestUser) => {
   try {
     const result = await prisma.workspace.findUnique({
       where: {
-        id : workspaceId,
-        isDeleted : false,
-        isActive : true
+        id: workspaceId,
+        isDeleted: false,
+        isActive: true,
       },
       include: {
         members: {
@@ -141,7 +142,7 @@ const getWorkSpaceById = async (workspaceId: string, user: IRequestUser) => {
     });
 
     if (!result) {
-      throw new AppError("workspace not found", status.NOT_FOUND); 
+      throw new AppError("workspace not found", status.NOT_FOUND);
     }
 
     const { members, ...rest } = result;
@@ -155,7 +156,31 @@ const getWorkSpaceById = async (workspaceId: string, user: IRequestUser) => {
   }
 };
 
-const getWorkspaceMembers = async (id: string) => {
+const getWorkspaceMembers = async (id: string, query: IQueryParams) => {
+  const additionalFilters : Prisma.WorkspaceMemberWhereInput[] = [];
+
+  if (query?.searchTerm) {
+    additionalFilters.push(
+      {
+      user: {
+        name: {
+          contains: query.searchTerm,
+          mode: "insensitive",
+        },
+      },
+    },
+    {
+      user: {
+        email: {
+          contains: query.searchTerm,
+          mode: "insensitive",
+        },
+      },
+    },
+  );
+  }
+
+
   try {
     const result = await prisma.workspaceMember.findMany({
       where: {
@@ -164,6 +189,7 @@ const getWorkspaceMembers = async (id: string) => {
           isDeleted: false,
           isActive: true,
         },
+        ...(additionalFilters.length > 0 && {OR :  additionalFilters}),
       },
       include: {
         user: {
@@ -172,9 +198,12 @@ const getWorkspaceMembers = async (id: string) => {
             email: true,
             id: true,
             image: true,
-            role: true,
           },
         },
+
+      },
+      omit : {
+        userId : true
       },
       orderBy: {
         createdAt: "desc",
@@ -211,6 +240,72 @@ const getAllWorkSpaces = async (query: IQueryParams) => {
     throw error;
   }
 };
+
+const getWorkspaceStats = async(workspaceId : string) => {
+  try {
+    const [totalLogs, totalBlockers,lastSevenDaysLogs,totalMembers] = await Promise.all([
+      prisma.standupLogs.aggregate({
+        where : {
+          workspaceId,
+          workSpace : {
+            isDeleted : false,
+            isActive : true
+          }
+        },
+        _count : {
+          id : true
+        }
+      }),
+      prisma.standupLogs.aggregate({
+        where : {
+           workspaceId,
+          blockerStatus : BlockerStatus.OPEN,
+          workSpace : {
+            isDeleted : false,
+            isActive : true
+          }
+        },
+        _count : {
+          blocker : true
+        }
+      }),
+      prisma.standupLogs.aggregate({
+        where : {
+          workspaceId,
+          createdAt : {
+            gte : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          }
+        },
+        _count : {
+          id : true
+        }
+      }),
+      prisma.workspaceMember.aggregate({
+        where : {
+          workspaceId,
+          role : TEAM_ROLE.MEMBER
+        },
+        _count : {
+          id : true
+        }
+      })
+    ]);
+
+    const workingDays = 5;
+    const potentialCompletion = totalMembers._count.id * workingDays;
+    const actualLogs = lastSevenDaysLogs._count.id;
+    const complianceRate = (actualLogs / potentialCompletion) * 100;
+
+    return{
+      totalLogs : totalLogs._count.id,
+      totalBlockers : totalBlockers._count.blocker,
+      complianceRate : Math.min(complianceRate,100)
+    }
+    
+  } catch (error) {
+    throw error;
+  }
+}
 
 const getWorkSpacesByUserId = async (query: IQueryParams, userId: string) => {
   try {
@@ -412,4 +507,5 @@ export const workspaceService = {
   getWorkSpacesByUserId,
   getUsersOverallWorkspaceStats,
   getWorkspaceMembers,
+  getWorkspaceStats
 };
