@@ -156,6 +156,17 @@ const updateWorkSpace = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const removeMemberFromWorkspace = catchAsync(async (req : Request, res : Response) => {
+  const workspaceId = req.params.workspaceId as string;
+  const memberId = req.body.memberId as string;
+   await workspaceService.removeMemberFromWorkspace(workspaceId,memberId);
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "member removed successfully",
+    success: true,
+  })
+ })
+
 export const workspaceController = {
   createWorkspace,
   inviteMember,
@@ -166,5 +177,6 @@ export const workspaceController = {
   getWorkspacesByUserId,
   getUsersOverallWorkspaceStats,
   getWorkspaceMembers,
-  getWorkspaceStats
+  getWorkspaceStats,
+  removeMemberFromWorkspace
 };

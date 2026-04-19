@@ -121,11 +121,11 @@ export const auth = betterAuth({
   },
   plugins: [bearer(), oAuthProxy()],
   session: {
-    expiresIn: 60 * 60 * 24, // 24 hours
+    expiresIn: 60 * 60 * 24 * 7, // 7days
     updateAge: 60 * 60 * 24, // 24 hours
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 24 * 60 * 60, //  24hours
     },
   },
   advanced: {

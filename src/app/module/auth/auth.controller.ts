@@ -56,6 +56,7 @@ const registerUser = catchAsync(async (req : Request, res : Response) => {
     if(inviteToken){
         await inviteServices.acceptInvite(inviteToken);
     }
+    
     tokenUtils.setAccessTokenCookie(res, data.accessToken);
     tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
     tokenUtils.setBetterAuthTokenCookie(res, data.token as string);

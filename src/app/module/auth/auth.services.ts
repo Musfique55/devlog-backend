@@ -21,8 +21,11 @@ const loginUser = async (payload: { email: string; password: string }) => {
       throw new AppError("User login failed", status.UNAUTHORIZED);
     }
 
-    if(data.user.isBlocked){
-      throw new AppError("Your account has been blocked. Please contact support.", status.FORBIDDEN);
+    if (data.user.isBlocked) {
+      throw new AppError(
+        "Your account has been blocked. Please contact support.",
+        status.FORBIDDEN,
+      );
     }
 
     const payloadForToken = {
@@ -31,7 +34,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
       role: data.user.role,
       plan: data.user.plan,
       isBlocked: data.user.isBlocked,
-      emailVerified: data.user.emailVerified
+      emailVerified: data.user.emailVerified,
     };
     const accessToken = tokenUtils.createAccessToken(payloadForToken);
     const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
@@ -53,18 +56,16 @@ const registerUser = async (payload: {
   inviteToken: string;
 }) => {
   try {
-
-
     const { name, email, password, inviteToken } = payload;
 
     const existingEmail = await prisma.user.findUnique({
-      where : {
-        email
-      }
+      where: {
+        email,
+      },
     });
 
-    if(existingEmail){
-      throw new AppError("user already exist with this email",400);
+    if (existingEmail) {
+      throw new AppError("user already exist with this email", 400);
     }
 
     const data = await auth.api.signUpEmail({
@@ -100,7 +101,7 @@ const registerUser = async (payload: {
     };
     const accessToken = tokenUtils.createAccessToken(payloadForToken);
     const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
-    
+
     return {
       ...data,
       accessToken,
@@ -124,6 +125,16 @@ const getNewTokens = async (refreshToken: string, sessionToken: string) => {
 
   if (!currentSessionToken) {
     throw new AppError("Invalid session token", status.UNAUTHORIZED);
+  }
+
+  //  token creation date + 30days if expiry date became greater or equal then token expired
+  const MAX_SESSION_LIFE = 30 * 24 * 60 * 60 * 1000;
+
+  if (
+    Date.now() >=
+    currentSessionToken.createdAt.getTime() + MAX_SESSION_LIFE
+  ) {
+    throw new AppError("Session token expired", status.UNAUTHORIZED);
   }
 
   const verifyRefreshToken = jwtUtils.verifyToken(
@@ -178,7 +189,10 @@ const logoutUser = async (sessionToken: string) => {
   return result;
 };
 
-const updateProfile = async (userId: string, payload: { name: string; image: string }) => {
+const updateProfile = async (
+  userId: string,
+  payload: { name: string; image: string },
+) => {
   try {
     const user = await prisma.user.findUnique({
       where: {
@@ -186,7 +200,7 @@ const updateProfile = async (userId: string, payload: { name: string; image: str
       },
     });
 
-    if(!user){
+    if (!user) {
       throw new AppError("User not found", status.NOT_FOUND);
     }
 
@@ -209,15 +223,15 @@ const getMe = async (userId: string) => {
       where: {
         id: userId,
       },
-      include : {
-        workspaces : {
-          omit : {
-            adminId : true,
-            deletedAt : true,
-            isDeleted : true,
-          }
+      include: {
+        workspaces: {
+          omit: {
+            adminId: true,
+            deletedAt: true,
+            isDeleted: true,
+          },
         },
-      }
+      },
     });
 
     if (!user) {
@@ -252,5 +266,5 @@ export const authService = {
   getNewTokens,
   logoutUser,
   updateEmailVerification,
-  getMe
+  getMe,
 };

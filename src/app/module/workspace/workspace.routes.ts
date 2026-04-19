@@ -19,6 +19,8 @@ router.post("/create-workspace",checkAuth(APP_ROLE.USER),requiredPro,zodRequestV
 router.post("/:workspaceId/invite",checkAuth(APP_ROLE.USER),requiredPro,teamAuth(TEAM_ROLE.ADMIN),workspaceController.inviteMember);
 router.patch("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),requiredPro,teamAuth(TEAM_ROLE.ADMIN),zodRequestValidation(workspaceValidation.validateWorkSpaceUpdate),workspaceController.updateWorkSpace);
 router.delete("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN),workspaceController.deleteWorkSpace);
+router.delete("/:workspaceId/remove-member",checkAuth(APP_ROLE.USER),teamAuth(TEAM_ROLE.ADMIN),workspaceController.removeMemberFromWorkspace);
+
 
 
 

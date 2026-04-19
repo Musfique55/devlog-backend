@@ -497,6 +497,40 @@ const updateWorkSpace = async (
   }
 };
 
+const removeMemberFromWorkspace = async(workspaceId : string,memberId : string) => {
+  try {
+    const member = await prisma.workspaceMember.findUnique({
+      where : {
+        workspaceId_userId : {
+          workspaceId,
+          userId : memberId
+        }
+      }
+    });
+
+    if(!member){
+      throw new AppError("member not found",status.NOT_FOUND);
+    }
+
+    if(member.role === TEAM_ROLE.ADMIN){
+      throw new AppError("admin cannot be removed",status.BAD_REQUEST);
+    }
+
+   const res = await prisma.workspaceMember.delete({
+      where : {
+        workspaceId_userId : {
+          workspaceId,
+          userId : memberId
+        }
+      }
+    });
+
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export const workspaceService = {
   createWorkspace,
   inviteMember,
@@ -507,5 +541,6 @@ export const workspaceService = {
   getWorkSpacesByUserId,
   getUsersOverallWorkspaceStats,
   getWorkspaceMembers,
-  getWorkspaceStats
+  getWorkspaceStats,
+  removeMemberFromWorkspace
 };
