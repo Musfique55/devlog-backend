@@ -1,5 +1,6 @@
 model Payment {
     id                 String        @id @default(uuid())
+    amount             Int           @default(0)
     userId             String
     user               User          @relation(fields: [userId], references: [id])
     transactionId      String
@@ -9,6 +10,9 @@ model Payment {
     paymentGatewayData Json?
     createdAt          DateTime      @default(now())
     updatedAt          DateTime      @updatedAt
+
+    @@map("payment")
+
 }
 
 enum PaymentStatus {

@@ -34,6 +34,12 @@ app.use(cors({
 }));
 
 app.use("/api/auth", toNodeHandler(auth));
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  paymentController.handleStripeWebhook
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -110,11 +116,7 @@ app.get("/", async(req, res) => {
   })
 });
 
-app.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  paymentController.handleStripeWebhook
-);
+
 
 app.use("/api/v1", indexRoutes);
 
