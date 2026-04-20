@@ -41,7 +41,22 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
   }
 });
 
+const checkPaymentStatus = catchAsync(async (req: Request, res: Response) => {
+  const { transactionId } = req.params;
+  const result = await paymentServices.checkPaymentStatus(
+    transactionId as string,
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "payment status checked successfully",
+    data: result,
+  });
+})
+
 export const paymentController = {
   handleStripeWebhook,
+  checkPaymentStatus
 };
 

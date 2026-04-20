@@ -12,7 +12,6 @@ const stripeWebhook = async (event: Stripe.Event) => {
     },
   });
 
-
   if (existing) {
     return;
   }
@@ -78,7 +77,7 @@ const stripeWebhook = async (event: Stripe.Event) => {
             },
           });
         } catch (error) {
-          console.log("email sending error",error);
+          console.log("email sending error", error);
         }
 
         console.log("proceed checkout.session.completed successfully");
@@ -123,7 +122,21 @@ const expiredSubscription = async () => {
   });
 };
 
+const checkPaymentStatus = async (transactionId: string) => {
+  const payment = await prisma.payment.findUnique({
+    where: {
+      transactionId,
+    },
+  });
+  return {
+    orderId: payment?.id,
+    amount: payment?.amount,
+    status: payment?.status,
+  };
+};
+
 export const paymentServices = {
   stripeWebhook,
   expiredSubscription,
+  checkPaymentStatus,
 };

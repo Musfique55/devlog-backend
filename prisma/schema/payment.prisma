@@ -3,7 +3,7 @@ model Payment {
     amount             Int           @default(0)
     userId             String
     user               User          @relation(fields: [userId], references: [id])
-    transactionId      String
+    transactionId      String        
     stripeEventId      String?
     invoiceUrl         String?
     status             PaymentStatus @default(PENDING)
@@ -12,6 +12,7 @@ model Payment {
     updatedAt          DateTime      @updatedAt
 
     @@map("payment")
+    @@unique([transactionId])
 
 }
 
