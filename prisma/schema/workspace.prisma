@@ -8,7 +8,7 @@ model Workspace {
     isActive  Boolean   @default(true)
 
     adminId String
-    admin   User              @relation(fields: [adminId], references: [id])
+    admin   User              @relation(fields: [adminId], references: [id], onDelete: Cascade)
     members WorkspaceMember[]
     invites Invite[]
     logs    StandupLogs[]

@@ -4,7 +4,7 @@ model StandupLogs{
     workSpace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
     userId      String 
-    user       User @relation(fields: [userId], references: [id])
+    user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     todayWork  String
     tomorrowWork  String

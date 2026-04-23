@@ -8,7 +8,7 @@ import { envVars } from "../../config/env";
 import crypto from "crypto";
 import { IQueryParams } from "../../types/queryBuilder.types";
 import { IRequestUser } from "../../middleware/checkAuth";
-import { get } from "http";
+
 
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
   const { name } = req.body;

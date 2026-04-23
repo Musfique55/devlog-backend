@@ -12,9 +12,10 @@ router.post("/login", zodRequestValidation(authSchemas.loginSchema) ,authControl
 router.post("/register", zodRequestValidation(authSchemas.registerSchema), authController.registerUser);
 router.patch("/update-profile", multerStorage.single("file"),checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), 
 zodRequestValidation(authSchemas.updateProfileSchema), authController.updateProfile);
-router.post("/refresh-token",authController.getNewTokens);
+router.post("/refresh-token",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),authController.getNewTokens);
 router.post("/logout", checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), authController.logoutUser);
 router.get("/me", checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN), authController.getMe);
+router.delete("/delete-account",checkAuth(APP_ROLE.USER), authController.deleteAccount);
 
 
 export const authRoutes = router;

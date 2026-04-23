@@ -46,6 +46,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
         status.UNAUTHORIZED,
       );
     }
+    
 
     const session = await prisma.session.findFirstOrThrow({
       where: {
@@ -56,7 +57,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
       },
     });
 
-    if (session && session.user && !session.user.isBlocked) {
+    if (session && session.user && !session.user.isBlocked && !session.user.isDeleted) {
       const user = session.user;
 
       const now = new Date();
@@ -87,7 +88,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
     }
 
     const accessToken = cookieUtils.getCookie(req, "accessToken");
-    if (!accessToken) {
+    if (!accessToken && !req.url.includes("/refresh-token")) {
       throw new AppError(
         "Unauthorized: No access token provided",
         status.UNAUTHORIZED,
@@ -96,7 +97,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
 
     const verifiedToken = jwtUtils.verifyToken(accessToken, envVars.JWT_SECRET);
 
-    if (!verifiedToken.success) {
+    if (!verifiedToken.success && !req.url.includes("/refresh-token")) {
       throw new AppError(
         "Unauthorized: Invalid access token",
         status.UNAUTHORIZED,

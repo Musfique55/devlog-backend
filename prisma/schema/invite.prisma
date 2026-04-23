@@ -3,7 +3,7 @@ model Invite {
     email String 
     token String @unique
     workspaceId String
-    workspace Workspace @relation(fields: [workspaceId], references: [id])
+    workspace Workspace @relation(fields: [workspaceId], references: [id],onDelete: Cascade)
 
     status  InviteStatus @default(PENDING)
     expiresAt DateTime

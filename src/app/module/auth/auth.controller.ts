@@ -7,106 +7,120 @@ import { tokenUtils } from "../../utils/token";
 import { cookieUtils } from "../../utils/cookie";
 import { inviteServices } from "../invite/invite.services";
 
-const loginUser = catchAsync(async (req : Request, res : Response) => {
-    const { email, password } = req.body;
-    const data = await authService.loginUser({ email, password });
-    tokenUtils.setAccessTokenCookie(res, data.accessToken);
-    tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
-    tokenUtils.setBetterAuthTokenCookie(res, data.token);
-    sendResponse(res, {
-        statusCode : status.OK,
-        message : "User logged in successfully",
-        success : true,
-        data,
-    });
+const loginUser = catchAsync(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  const data = await authService.loginUser({ email, password });
+  tokenUtils.setAccessTokenCookie(res, data.accessToken);
+  tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
+  tokenUtils.setBetterAuthTokenCookie(res, data.token);
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "User logged in successfully",
+    success: true,
+    data,
+  });
 });
 
-const updateProfile = catchAsync(async (req : Request, res : Response) => {
-    const userId = req.user?.id as string;
-    const payload = {
-        ...req.body,
-        image : req.file?.path
-    }
+const updateProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const payload = {
+    ...req.body,
+    image: req.file?.path,
+  };
 
-    const data = await authService.updateProfile(userId, payload);
-    sendResponse(res, {
-        statusCode : status.OK,
-        message : "User updated successfully",
-        success : true,
-        data,
-    });
+  const data = await authService.updateProfile(userId, payload);
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "User updated successfully",
+    success: true,
+    data,
+  });
 });
 
-const getMe = catchAsync(async (req : Request, res : Response) => { 
-    const userId = req.user?.id as string;
-    const data = await authService.getMe(userId);
-    sendResponse(res, {
-        statusCode : status.OK,
-        message : "User profile fetched successfully",
-        success : true,
-        data,
-    });
- });
-
-
-const registerUser = catchAsync(async (req : Request, res : Response) => {
-    const { name, email, password,inviteToken } = req.body;
-    const data = await authService.registerUser({ name, email, password,inviteToken });
-    
-    if(inviteToken){
-        await inviteServices.acceptInvite(inviteToken);
-    }
-    
-    tokenUtils.setAccessTokenCookie(res, data.accessToken);
-    tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
-    tokenUtils.setBetterAuthTokenCookie(res, data.token as string);
-    sendResponse(res, {
-        statusCode : status.CREATED,
-        message : "User registered successfully",
-        success : true,
-        data,
-    });
+const getMe = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const data = await authService.getMe(userId);
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "User profile fetched successfully",
+    success: true,
+    data,
+  });
 });
 
-const getNewTokens = catchAsync(async (req : Request, res : Response) => { 
-    const refreshToken = req.cookies.refreshToken;
-    const sessionToken = req.cookies["better-auth.session_token"];
-    const data = await authService.getNewTokens(refreshToken, sessionToken);
+const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const { name, email, password, inviteToken } = req.body;
+  const data = await authService.registerUser({
+    name,
+    email,
+    password,
+    inviteToken,
+  });
 
-    tokenUtils.setAccessTokenCookie(res, data.accessToken);
-    tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
-    tokenUtils.setBetterAuthTokenCookie(res, data.sessionToken);
-    
-    sendResponse(res, {
-        statusCode : status.OK,
-        message : "New tokens generated successfully",
-        success : true,
-        data,
-    });
- });
+  if (inviteToken) {
+    await inviteServices.acceptInvite(inviteToken);
+  }
 
- const logoutUser = catchAsync(async (req : Request, res : Response) => {
-    const sessionToken = req.cookies["better-auth.session_token"];
-    await authService.logoutUser(sessionToken);
+  tokenUtils.setAccessTokenCookie(res, data.accessToken);
+  tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
+  tokenUtils.setBetterAuthTokenCookie(res, data.token as string);
+  sendResponse(res, {
+    statusCode: status.CREATED,
+    message: "User registered successfully",
+    success: true,
+    data,
+  });
+});
 
-    cookieUtils.clearCookie(res, "accessToken");
-    cookieUtils.clearCookie(res, "refreshToken");
-    cookieUtils.clearCookie(res, "better-auth.session_token");
+const getNewTokens = catchAsync(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken;
+  const sessionToken = req.cookies["better-auth.session_token"];
+  const data = await authService.getNewTokens(refreshToken, sessionToken);
 
-    sendResponse(res, {
-        statusCode : status.OK,
-        message : "User logged out successfully",
-        success : true,
-    });
- });
+  tokenUtils.setAccessTokenCookie(res, data.accessToken);
+  tokenUtils.setRefreshTokenCookie(res, data.refreshToken);
+  tokenUtils.setBetterAuthTokenCookie(res, data.sessionToken);
 
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "New tokens generated successfully",
+    success: true,
+    data,
+  });
+});
 
+const logoutUser = catchAsync(async (req: Request, res: Response) => {
+  const sessionToken = req.cookies["better-auth.session_token"];
+  await authService.logoutUser(sessionToken);
+
+  cookieUtils.clearCookie(res, "accessToken");
+  cookieUtils.clearCookie(res, "refreshToken");
+  cookieUtils.clearCookie(res, "better-auth.session_token");
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "User logged out successfully",
+    success: true,
+  });
+});
+
+const deleteAccount = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  await authService.deleteAccount(userId);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    message: "User deleted successfully",
+    success: true,
+  });
+});
 
 export const authController = {
-    loginUser,
-    registerUser,
-    getNewTokens,
-    updateProfile,
-    logoutUser,
-    getMe
-}
+  loginUser,
+  registerUser,
+  getNewTokens,
+  updateProfile,
+  logoutUser,
+  getMe,
+  deleteAccount
+};

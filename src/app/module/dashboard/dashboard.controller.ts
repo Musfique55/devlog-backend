@@ -40,9 +40,32 @@ const dashboardForSuperAdmin = catchAsync(async (req: Request, res: Response) =>
   })
 })
 
+const getFullYearProfit = catchAsync(async (req: Request, res: Response) => {
+  const result = await dashboardServices.getFullYearProfit();
+  sendResponse(res, {
+    statusCode: 200,
+    message : "Yearly profit fetched successfully",
+    success : true,
+    data : result
+  })
+})
+
+const userGrowth = catchAsync(async (req: Request, res: Response) => {
+  const result = await dashboardServices.userGrowth();
+  sendResponse(res, {
+    statusCode: 200,
+    message : "User growth fetched successfully",
+    success : true,
+    data : result
+  })
+})
+
+
 
 export const dashboardController = {
   dashboardForSoloUser,
   dashboardForTeamUser,
-  dashboardForSuperAdmin
+  dashboardForSuperAdmin,
+  getFullYearProfit,
+  userGrowth
 };

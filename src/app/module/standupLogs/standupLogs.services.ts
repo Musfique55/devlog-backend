@@ -82,10 +82,12 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         status.FORBIDDEN,
       );
     } else {
+        
       if (user.lastLogDate && !payload.workspaceId) {
         if (
           new Date(user.lastLogDate).toDateString() ===
           new Date().toDateString()
+          
         ) {
           throw new AppError(
             "You have already logged today",

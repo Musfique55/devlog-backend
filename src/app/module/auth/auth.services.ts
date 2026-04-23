@@ -6,6 +6,7 @@ import { prisma } from "../../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import { envVars } from "../../config/env";
 import { JwtPayload } from "jsonwebtoken";
+import { TEAM_ROLE } from "../../../generated/prisma/enums";
 
 const loginUser = async (payload: { email: string; password: string }) => {
   try {
@@ -17,13 +18,21 @@ const loginUser = async (payload: { email: string; password: string }) => {
       },
     });
 
-    if (!data.user) {
+
+    if (!data) {
       throw new AppError("User login failed", status.UNAUTHORIZED);
     }
 
     if (data.user.isBlocked) {
       throw new AppError(
         "Your account has been blocked. Please contact support.",
+        status.FORBIDDEN,
+      );
+    }
+
+    if(data.user.isDeleted){
+      throw new AppError(
+        "Your account has been deleted. Please contact support.",
         status.FORBIDDEN,
       );
     }
@@ -45,7 +54,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
       refreshToken,
     };
   } catch (error: any) {
-    throw new AppError(error.body.message, error.statusCode);
+    throw new AppError(error.message, error.statusCode);
   }
 };
 
@@ -244,6 +253,85 @@ const getMe = async (userId: string) => {
   }
 };
 
+const deleteAccount = async (userId: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include : {
+        workspaces : {
+          select : {
+            id : true,
+            adminId : true,
+            members : {
+              where : {
+                role : TEAM_ROLE.MEMBER
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    let res;
+
+    if (user.plan === "FREE") {
+      res = await prisma.user.delete({
+        where: {
+          id: userId,
+        },
+      });
+    } else {
+      const admins = user.workspaces.filter(
+        (workspace) => workspace.adminId === userId,
+      );
+
+      res = await prisma.$transaction(async (tx) => {
+        if (admins.length > 0) {
+          for (const admin of admins) {
+            if (admin.members.length > 0) {
+              await tx.workspace.update({
+                where: {
+                  id: admin.id,
+                },
+                data: {
+                  adminId: admin.members[0]!.userId,
+                },
+              });
+            } else {
+              await tx.workspace.delete({
+                where: {
+                  id: admin.id,
+                },
+              });
+            }
+          }
+        }
+
+        const res = await tx.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            isDeleted: true,
+            deletedAt: new Date(),
+          },
+        });
+        return res;
+      });
+    }
+
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const updateEmailVerification = async (userId: string) => {
   try {
     await prisma.user.update({
@@ -267,4 +355,5 @@ export const authService = {
   logoutUser,
   updateEmailVerification,
   getMe,
+  deleteAccount,
 };

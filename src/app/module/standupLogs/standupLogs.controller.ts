@@ -10,6 +10,7 @@ const createLog = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const payload = req.body;
   const result = await StandupLogServices.createLog(userId as string, payload);
+  console.log(result);
   sendResponse(res, {
     statusCode: status.CREATED,
     success: true,

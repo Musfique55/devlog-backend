@@ -1,7 +1,9 @@
 import { APP_ROLE, PLAN } from "../../../generated/prisma/client/enums";
+import { PaymentStatus } from "../../../generated/prisma/enums";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
 import { IRequestUser } from "../../middleware/checkAuth";
+import { getMonthName } from "../../utils/getMonthName";
 
 const dashboardForSoloUser = async (loggedUser: IRequestUser) => {
   try {
@@ -169,6 +171,7 @@ const dashboardForSuperAdmin = async (user: IRequestUser) => {
       proUsers,
       freeUsers,
       newUsersThisWeek,
+      currentMonthRevenue
     ] = await Promise.all([
       prisma.user.count(),
       prisma.workspace.count(),
@@ -191,6 +194,16 @@ const dashboardForSuperAdmin = async (user: IRequestUser) => {
           },
         },
       }),
+      prisma.payment.aggregate({
+        where : {
+          createdAt : {
+            gte : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          }
+        },
+        _sum : {
+          amount : true
+        }
+      })
     ]);
 
     return {
@@ -199,7 +212,8 @@ const dashboardForSuperAdmin = async (user: IRequestUser) => {
       totalLogs,
       proUsers,
       freeUsers,
-      newUsersThisWeek
+      newUsersThisWeek,
+      monthlyRevenue : currentMonthRevenue._sum.amount || 0
     };
   } catch (error) {
     throw error;
@@ -207,8 +221,90 @@ const dashboardForSuperAdmin = async (user: IRequestUser) => {
 };
 
 
+const getFullYearProfit = async () => {
+  const data = await prisma.payment.groupBy({
+    by: ['createdAt'] ,
+    _sum: {
+      amount: true,
+    },
+    where : {
+      createdAt : {
+        gte : new Date(new Date().getFullYear(), 0, 1),
+        lte : new Date(new Date().getFullYear(), 11, 31)
+      },
+      status : PaymentStatus.SUCCESS
+    }
+  })
+
+  const formattedData = data.map(item => {
+    return {
+      month : getMonthName(item.createdAt.getMonth() + 1),
+      profit : item._sum.amount || 0
+    }
+  })
+  return formattedData;
+}
+
+
+const userGrowth = async () => {
+  const now = new Date();
+
+  const weeks = Array.from({ length: 8 }, (_, i) => {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - (7 * (7-i)));
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+
+    return { weekStart, weekEnd, label : `Week ${i + 1}` };
+  });
+
+  const growthData = await Promise.all(
+    weeks.map(async ({ weekStart, weekEnd, label }) => {
+
+      const [active, inActive] = await Promise.all([
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: weekStart,
+              lt: weekEnd,
+            },
+            isBlocked : false,  
+            isDeleted : false,
+            role : APP_ROLE.USER
+          },
+        }),
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: weekStart,
+              lt: weekEnd,
+            },
+            isBlocked : true,
+            isDeleted : false,
+            role : APP_ROLE.USER
+          },
+        }),
+      ]);
+
+
+      return {
+        week: label,
+        active,
+        inActive,
+      };
+    }),
+  );
+
+  return growthData;
+
+}
+
 export const dashboardServices = {
   dashboardForSoloUser,
   dashboardForTeamUser,
-  dashboardForSuperAdmin
+  dashboardForSuperAdmin,
+  getFullYearProfit,
+  userGrowth
 };

@@ -3,7 +3,6 @@ import z from "zod";
  const createLogSchema = (plan : "FREE" | "PRO") => {
   return z
     .object({
-      userId: z.string(),
       todayWork: z.string().min(1),
       tomorrowWork: z.string().min(1),
       blocker: z.string().optional(),
