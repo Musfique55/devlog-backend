@@ -14,7 +14,7 @@ import { StandupLogServices } from "./module/standupLogs/standupLogs.services";
 import { prisma } from "../lib/prisma";
 import { sendEmail } from "./utils/sendEmail";
 import { getWeekRange } from "./utils/getWeekRange";
-import { PLAN } from "../generated/prisma/client/enums";
+import { PLAN } from "@prisma/client";
 import { paymentController } from "./module/payment/payment.controller";
 import { envVars } from "./config/env";
 import { paymentServices } from "./module/payment/payment.services";

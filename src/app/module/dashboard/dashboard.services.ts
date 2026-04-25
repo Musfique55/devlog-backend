@@ -1,4 +1,4 @@
-import { APP_ROLE, PLAN } from "../../../generated/prisma/client/enums";
+import { APP_ROLE, PLAN } from "@prisma/client";
 import { PaymentStatus } from "../../../generated/prisma/enums";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";

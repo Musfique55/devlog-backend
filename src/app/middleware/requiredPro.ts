@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { PLAN } from "../../generated/prisma/client/enums";
+import { PLAN } from "@prisma/client";
 import AppError from "../helper/AppError";
 import status from "http-status";
 

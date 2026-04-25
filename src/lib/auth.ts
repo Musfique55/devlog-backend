@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
-import { APP_ROLE, PLAN } from "../generated/prisma/client/enums";
+import { APP_ROLE, PLAN } from "@prisma/client";
 import { bearer, oAuthProxy } from "better-auth/plugins";
 import { sendEmail } from "../app/utils/sendEmail";
 import { InviteStatus } from "../generated/prisma/enums";

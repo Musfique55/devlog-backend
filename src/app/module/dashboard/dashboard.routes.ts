@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { checkAuth } from "../../middleware/checkAuth";
-import { APP_ROLE } from "../../../generated/prisma/client/enums";
+import { APP_ROLE } from "@prisma/client";
 import { dashboardController } from "./dashboard.controller";
 import { teamAuth } from "../../middleware/TeamAuth";
 import { TEAM_ROLE } from "../../../generated/prisma/enums";
