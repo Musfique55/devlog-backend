@@ -1,9 +1,10 @@
 
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+const { defineConfig, env } = require('@prisma/config');;
 
 
 export default defineConfig({
+  earlyAccess: true,
   schema: "prisma/schema",
   migrations: {
     path: "prisma/migrations",
