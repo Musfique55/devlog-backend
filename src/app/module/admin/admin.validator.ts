@@ -6,6 +6,6 @@ const updateUserSchema = z.object({
     isDeleted : z.boolean().optional(),
 });
 
-export const UserValidator = {
+export const AdminValidator = {
     updateUserSchema
 }

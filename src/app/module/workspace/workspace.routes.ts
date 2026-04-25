@@ -11,7 +11,7 @@ const router = Router();
 
 router.get("/me",checkAuth(APP_ROLE.USER),workspaceController.getWorkspacesByUserId);  
 router.get("/me/stats",checkAuth(APP_ROLE.USER),workspaceController.getUsersOverallWorkspaceStats);       
-router.get("/",checkAuth(APP_ROLE.SUPER_ADMIN),workspaceController.getAllWorkSpaces);
+
 router.get("/:workspaceId/members",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN,TEAM_ROLE.MEMBER),workspaceController.getWorkspaceMembers);
 router.get("/:workspaceId",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN,TEAM_ROLE.MEMBER),workspaceController.getWorkSpaceById);
 router.get("/:workspaceId/stats",checkAuth(APP_ROLE.USER,APP_ROLE.SUPER_ADMIN),teamAuth(TEAM_ROLE.ADMIN),workspaceController.getWorkspaceStats);

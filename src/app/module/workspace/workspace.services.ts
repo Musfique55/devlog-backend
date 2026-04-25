@@ -216,30 +216,7 @@ const getWorkspaceMembers = async (id: string, query: IQueryParams) => {
   }
 };
 
-const getAllWorkSpaces = async (query: IQueryParams) => {
-  try {
-    const builder = new QueryBuilder<WorkspaceFindManyArgs>(query)
-      .search(["name", "admin.name", "admin.email", "admin.id"])
-      .sort()
-      .paginate();
 
-    const [data, count] = await Promise.all([
-      prisma.workspace.findMany(builder.build()),
-      prisma.workspace.count(builder.count()),
-    ]);
-    return {
-      data,
-      meta: {
-        total: count,
-        page: query.page,
-        limit: Number(query.limit) || 10,
-        totalPages: Math.ceil(count / Number(query.limit || 10)),
-      },
-    };
-  } catch (error) {
-    throw error;
-  }
-};
 
 const getWorkspaceStats = async(workspaceId : string) => {
   try {
@@ -535,7 +512,6 @@ export const workspaceService = {
   createWorkspace,
   inviteMember,
   getWorkSpaceById,
-  getAllWorkSpaces,
   deleteWorkSpace,
   updateWorkSpace,
   getWorkSpacesByUserId,

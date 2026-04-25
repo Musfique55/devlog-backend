@@ -222,11 +222,32 @@ const dashboardForSuperAdmin = async (user: IRequestUser) => {
 
 
 const getFullYearProfit = async () => {
-  const data = await prisma.payment.groupBy({
-    by: ['createdAt'] ,
-    _sum: {
-      amount: true,
-    },
+  // const data = await prisma.payment.groupBy({
+  //   by: ['createdAt'] ,
+  //   _sum: {
+  //     amount: true,
+  //   },
+  //   where : {
+  //     createdAt : {
+  //       gte : new Date(new Date().getFullYear(), 0, 1),
+  //       lte : new Date(new Date().getFullYear(), 11, 31)
+  //     },
+  //     status : PaymentStatus.SUCCESS
+  //   }
+  // })
+
+  // const formattedData = data.map(item => {
+  //   return {
+  //     month : getMonthName(item.createdAt.getMonth() + 1),
+  //     profit : item._sum.amount || 0,
+  //     revenue : item._sum.amount || 0
+  //   }
+  // })
+  // return formattedData;  
+
+  // for less data using this method
+
+  const payments = await prisma.payment.findMany({
     where : {
       createdAt : {
         gte : new Date(new Date().getFullYear(), 0, 1),
@@ -234,15 +255,23 @@ const getFullYearProfit = async () => {
       },
       status : PaymentStatus.SUCCESS
     }
-  })
+  });
 
-  const formattedData = data.map(item => {
+  const months = Array.from({ length: 12 }, (_, i) => {
     return {
-      month : getMonthName(item.createdAt.getMonth() + 1),
-      profit : item._sum.amount || 0
-    }
-  })
-  return formattedData;
+      month: getMonthName(i + 1),
+      profit: 0,
+      revenue: 0,
+    };
+  });
+    
+  payments.forEach(payment => {
+    const monthIndex = payment.createdAt.getMonth();
+    months[monthIndex]!.profit += payment.amount;
+    months[monthIndex]!.revenue += payment.amount;
+  });
+
+  return months;
 }
 
 
