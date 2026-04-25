@@ -30,6 +30,11 @@ app.post(
   paymentController.handleStripeWebhook
 );
 
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 app.set("view engine", "ejs");
 app.set("views", path.resolve(process.cwd(), "src/app/templates"));
 
@@ -41,13 +46,6 @@ app.use(cors({
 }));
 
 app.use("/api/auth", toNodeHandler(auth));
-
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-
 
 cron.schedule("0 0 * * *", async () => {
   await inviteServices.updateExpiredTokens();
