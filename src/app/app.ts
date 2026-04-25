@@ -24,6 +24,12 @@ dotenv.config();
 
 const app = express();
 
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  paymentController.handleStripeWebhook
+);
+
 app.set("view engine", "ejs");
 app.set("views", path.resolve(process.cwd(), "src/app/templates"));
 
@@ -35,11 +41,7 @@ app.use(cors({
 }));
 
 app.use("/api/auth", toNodeHandler(auth));
-app.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  paymentController.handleStripeWebhook
-);
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
