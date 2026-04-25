@@ -2,7 +2,7 @@ import app from "./app";
 import { envVars } from "./config/env";
 import { prisma } from "../lib/prisma";
 
-const PORT = envVars.PORT || 3000;
+const PORT = envVars.PORT || 5000;
 
 const server = async () => {
   try {
