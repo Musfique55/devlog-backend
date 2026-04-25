@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { PLAN } from "@prisma/client";
 import AppError from "../helper/AppError";
 import status from "http-status";
+import { PLAN } from "../../generated/prisma/enums";
 
 export const requiredPro = (
   req: Request,

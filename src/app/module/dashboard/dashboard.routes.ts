@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { checkAuth } from "../../middleware/checkAuth";
-import { APP_ROLE } from "@prisma/client";
+
 import { dashboardController } from "./dashboard.controller";
 import { teamAuth } from "../../middleware/TeamAuth";
-import { TEAM_ROLE } from "../../../generated/prisma/enums";
+import { APP_ROLE, TEAM_ROLE } from "../../../generated/prisma/enums";
 
 const router = Router();
 
