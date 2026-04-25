@@ -40,8 +40,7 @@ export const auth = betterAuth({
           name: user.name,
           verifyUrl: url.replace(
             `${envVars.BETTER_AUTH_URL}/api/auth`,
-            envVars.FRONTEND_URL,
-          ),
+            `${envVars.FRONTEND_URL}/auth`),
         },
       });
     },
