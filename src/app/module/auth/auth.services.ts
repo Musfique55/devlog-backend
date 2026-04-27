@@ -198,139 +198,7 @@ const logoutUser = async (sessionToken: string) => {
   return result;
 };
 
-const updateProfile = async (
-  userId: string,
-  payload: { name: string; image: string },
-) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
 
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: payload,
-    });
-
-    return updatedUser;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const getMe = async (userId: string) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      include: {
-        workspaces: {
-          omit: {
-            adminId: true,
-            deletedAt: true,
-            isDeleted: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
-
-    return user;
-  } catch (error) {
-    throw error;
-  }
-};
-
-const deleteAccount = async (userId: string) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      include : {
-        workspaces : {
-          select : {
-            id : true,
-            adminId : true,
-            members : {
-              where : {
-                role : TEAM_ROLE.MEMBER
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
-
-    let res;
-
-    if (user.plan === "FREE") {
-      res = await prisma.user.delete({
-        where: {
-          id: userId,
-        },
-      });
-    } else {
-      const admins = user.workspaces.filter(
-        (workspace) => workspace.adminId === userId,
-      );
-
-      res = await prisma.$transaction(async (tx) => {
-        if (admins.length > 0) {
-          for (const admin of admins) {
-            if (admin.members.length > 0) {
-              await tx.workspace.update({
-                where: {
-                  id: admin.id,
-                },
-                data: {
-                  adminId: admin.members[0]!.userId,
-                },
-              });
-            } else {
-              await tx.workspace.delete({
-                where: {
-                  id: admin.id,
-                },
-              });
-            }
-          }
-        }
-
-        const res = await tx.user.update({
-          where: {
-            id: userId,
-          },
-          data: {
-            isDeleted: true,
-            deletedAt: new Date(),
-          },
-        });
-        return res;
-      });
-    }
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
 
 const updateEmailVerification = async (userId: string) => {
   try {
@@ -350,10 +218,7 @@ const updateEmailVerification = async (userId: string) => {
 export const authService = {
   loginUser,
   registerUser,
-  updateProfile,
   getNewTokens,
   logoutUser,
-  updateEmailVerification,
-  getMe,
-  deleteAccount,
+  updateEmailVerification
 };

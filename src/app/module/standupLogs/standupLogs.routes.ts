@@ -23,22 +23,22 @@ router.delete("/:id", checkAuth(APP_ROLE.USER), StandupLogController.deleteLog);
 router.get("/:id", checkAuth(APP_ROLE.USER), StandupLogController.getLogById);
 router.get("/",checkAuth(APP_ROLE.USER),StandupLogController.getLogs);
 router.get(
-  "/workspace/:workspaceId",
+  "/workspaces/:workspaceId",
   checkAuth(APP_ROLE.USER),
   teamAuth(TEAM_ROLE.ADMIN),
   StandupLogController.getLogsByWorkspaceId,
 );
 router.get(
-  "/workspace/:workspaceId/blocker/:blocker",
+  "/workspaces/:workspaceId/blocker/:blocker",
   checkAuth(APP_ROLE.USER),
   teamAuth(TEAM_ROLE.ADMIN),
   StandupLogController.getAllBlockerLogs,
 );
-router.patch("/workspace/:workspaceId/blocker/:id", checkAuth(APP_ROLE.USER), 
+router.patch("/workspaces/:workspaceId/blocker/:id", checkAuth(APP_ROLE.USER), 
 teamAuth(TEAM_ROLE.ADMIN),StandupLogController.updateBlockerStatus)
 
 router.delete(
-  "/workspace/:workspaceId/:id",
+  "/workspaces/:workspaceId/:id",
   checkAuth(APP_ROLE.USER),
   teamAuth(TEAM_ROLE.ADMIN),
   StandupLogController.deleteLogFromWorkspace,

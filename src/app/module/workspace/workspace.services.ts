@@ -216,7 +216,98 @@ const getWorkspaceMembers = async (id: string, query: IQueryParams) => {
   }
 };
 
+const getAllWorkSpaces = async (query: IQueryParams) => {
+  try {
+    const additionalFilter: Prisma.WorkspaceWhereInput[] = [];
+    if (query.searchTerm) {
+      additionalFilter.push({
+        name: {
+          contains: query.searchTerm,
+          mode: "insensitive",
+        },
+      });
+    }
 
+    if (query) {
+      if (query.isActive === "true") {
+        additionalFilter.push({
+          isActive: true,
+        });
+      } else if (query.isActive === "false") {
+        additionalFilter.push({
+          isActive: false,
+        });
+      }
+    }
+
+    const [data, count] = await Promise.all([
+      prisma.workspace.findMany({
+        where: {
+          AND: {
+            ...(query.isActive && {isActive: query.isActive === "true" ? true : false}),
+            ...(additionalFilter.length > 0 && { OR: additionalFilter }),
+          },
+        },
+        omit: {
+          adminId: true,
+        },
+        include: {
+          admin: {
+            select: {
+              name: true,
+              email: true,
+              id: true,
+              image: true,
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+              logs: true,
+            },
+          },
+        },
+        orderBy: {
+          [query.sortBy || "createdAt"]:
+            query.sortOrder === "asc" ? "asc" : "desc",
+        },
+        skip: (Number(query.page) - 1) * Number(query.limit) || 0,
+        take: Number(query.limit) || 10,
+      }),
+
+      prisma.workspace.count({
+        where: {
+          ...(additionalFilter.length > 0 && { OR: additionalFilter }),
+          AND: {
+            isDeleted: false,
+            isActive: true,
+          },
+        },
+      }),
+    ]);
+
+    const formattedData = data.map((workspace) => {
+      const { _count, ...rest } = workspace;
+      return {
+        ...rest,
+        memberCount: workspace._count.members,
+        logCount: workspace._count.logs,
+      };
+    });
+
+    return {
+      data: formattedData,
+      meta: {
+        total: count,
+        page: Number(query.page) || 1,
+        limit: Number(query.limit) || 10,
+        totalPages: Math.ceil(count / Number(query.limit || 10)),
+      },
+    };
+  } catch (error) {
+    throw error;
+  }
+};
 
 const getWorkspaceStats = async(workspaceId : string) => {
   try {
@@ -518,5 +609,6 @@ export const workspaceService = {
   getUsersOverallWorkspaceStats,
   getWorkspaceMembers,
   getWorkspaceStats,
-  removeMemberFromWorkspace
+  removeMemberFromWorkspace,
+  getAllWorkSpaces,
 };

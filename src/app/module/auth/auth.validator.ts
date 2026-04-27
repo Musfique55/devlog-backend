@@ -12,14 +12,10 @@ const registerSchema = z.object({
     inviteToken : z.string().optional()
 });
 
-const updateProfileSchema = z.object({
-    name : z.string().min(2).max(100).optional(),
-    image : z.url().optional(),
-});
+
 
 
 export const authSchemas = {
     loginSchema,
     registerSchema,
-    updateProfileSchema
 }
