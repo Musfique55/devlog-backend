@@ -1,9 +1,14 @@
 import Stripe from "stripe";
 import { prisma } from "../../../lib/prisma";
 import AppError from "../../helper/AppError";
-import { PaymentStatus, PLAN } from "../../../generated/prisma/enums";
+import {
+  PaymentStatus,
+  PLAN,
+  SubscriptionStatus,
+} from "../../../generated/prisma/enums";
 import { sendEmail } from "../../utils/sendEmail";
 import { envVars } from "../../config/env";
+import { stripe } from "../../config/stripe.config";
 
 const stripeWebhook = async (event: Stripe.Event) => {
   const existing = await prisma.payment.findFirst({
@@ -20,39 +25,99 @@ const stripeWebhook = async (event: Stripe.Event) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userProfileId = session.metadata?.userId;
-        const paymentIntentId = session.payment_intent;
 
-        if (!paymentIntentId) {
-          throw new AppError("no payment intent id found", 404);
+        console.log(
+          "proceed checkout.session.completed successfully",
+          session.id,
+        );
+        break;
+      }
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        const intentedPayment = await prisma.payment.findUnique({
+          where: {
+            transactionId: invoice.id,
+          },
+        });
+
+        if (intentedPayment) {
+          console.log("payment already processed");
+          return;
         }
 
-        if (!userProfileId) {
-          throw new AppError("no user profile id found", 404);
+        if (!customerId) {
+          throw new AppError("no stripe customer id found", 404);
         }
+
+        const user = await prisma.user.findUnique({
+          where: {
+            stripeCustomerId: customerId,
+          },
+        });
+
+        if (!user) {
+          throw new AppError("no user found", 404);
+        }
+
+        const subscriptionId = invoice.parent?.subscription_details
+          ?.subscription as string;
+
+        if (!subscriptionId) {
+          throw new AppError("no subscription id found", 404);
+        }
+
+        const stripeSubscription =
+          await stripe.subscriptions.retrieve(subscriptionId);
 
         await prisma.$transaction(async (tx) => {
           const paymentData = await tx.payment.create({
             data: {
-              userId: session.metadata!.userId as string,
-              amount: session.amount_total! / 100,
-              transactionId: session.id,
+              userId: user.id,
+              amount: invoice.amount_paid! / 100,
+              transactionId: invoice.id,
               status: PaymentStatus.SUCCESS,
               stripeEventId: event.id,
-              paymentGatewayData: session as any,
-              invoiceUrl: session.invoice as string,
+              paymentGatewayData: invoice as any,
+              invoiceUrl: invoice.hosted_invoice_url as string,
+            },
+          });
+          await tx.subscription.upsert({
+            where: {
+              stripeSubscriptionId: subscriptionId,
+            },
+            update: {
+              status: SubscriptionStatus.ACTIVE,
+              currentPeriodStart: new Date(
+                stripeSubscription?.items?.data[0]?.current_period_start! *
+                  1000,
+              ),
+              currentPeriodEnd: new Date(
+                stripeSubscription?.items?.data[0]?.current_period_end! * 1000,
+              ),
+            },
+            create: {
+              userId: user.id,
+              stripeSubscriptionId: subscriptionId,
+              status: SubscriptionStatus.ACTIVE,
+              currentPeriodStart: new Date(
+                stripeSubscription?.items?.data[0]?.current_period_start! *
+                  1000,
+              ),
+              currentPeriodEnd: new Date(
+                stripeSubscription?.items?.data[0]?.current_period_end! * 1000,
+              ),
+              stripeCustomerId: customerId,
             },
           });
           await tx.user.update({
             where: {
-              id: userProfileId,
+              id: user.id,
             },
             data: {
               plan: PLAN.PRO,
               expiresAt: new Date(
-                new Date(paymentData.createdAt).setMonth(
-                  new Date(paymentData.createdAt).getMonth() + 1,
-                ),
+                stripeSubscription?.items?.data[0]?.current_period_end! * 1000,
               ),
             },
           });
@@ -61,40 +126,83 @@ const stripeWebhook = async (event: Stripe.Event) => {
 
         try {
           await sendEmail({
-            to: session.metadata!.email as string,
+            to: user.email,
             subject: "🎉 Welcome to DevLog Pro!",
             templateName: "payment-success",
             templateData: {
-              name: session.metadata!.name,
-              transactionId: session.id,
+              name: user.name,
+              transactionId: invoice.id,
               date: new Date().toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
                 year: "numeric",
               }),
-              amount: (session.amount_total! / 100).toFixed(2), // "20.00"
+              amount: (invoice.amount_paid! / 100).toFixed(2), // "20.00"
               dashboardUrl: `${envVars.FRONTEND_URL}/dashboard`,
             },
           });
         } catch (error) {
           console.log("email sending error", error);
         }
-
-        console.log("proceed checkout.session.completed successfully");
+        console.log(`invoice paid ${invoice.id}`);
         break;
       }
-      case "checkout.session.expired": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log(
-          `checkout session expired ${session.id}. Marking payment as failed`,
-        );
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = invoice.parent?.subscription_details
+          ?.subscription as string;
+
+        if (!subscriptionId) {
+          throw new AppError("no subscription id found", 404);
+        }
+
+        await prisma.subscription.update({
+          where: {
+            stripeSubscriptionId: subscriptionId,
+          },
+          data: {
+            status: SubscriptionStatus.PAST_DUE,
+          },
+        });
+        console.log(`invoice payment failed ${invoice.id}`);
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        try {
+          await prisma.$transaction(async (tx) => {
+            await tx.user.update({
+              where: {
+                stripeCustomerId: customerId,
+              },
+              data: {
+                plan: PLAN.FREE,
+                expiresAt: null,
+              },
+            });
+            await tx.subscription.update({
+              where: {
+                stripeSubscriptionId: subscription.id,
+              },
+              data: {
+                status: SubscriptionStatus.CANCELLED,
+              },
+            });
+          });
+        } catch (error) {
+          console.log("error occured during subscription deletion", error);
+        }
+
+        console.log(`customer subscription deleted ${subscription.id}`);
         break;
       }
       case "payment_intent.payment_failed": {
-        const session = event.data.object as Stripe.PaymentIntent;
-        console.log(
-          `payment intent failed ${session.id}. Marking payment as failed`,
-        );
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const customerId = paymentIntent.customer as string;
+
+        console.log(`payment intent failed for customer ${customerId}`);
         break;
       }
       default: {
@@ -105,21 +213,6 @@ const stripeWebhook = async (event: Stripe.Event) => {
   } catch (error) {
     throw error;
   }
-};
-
-const expiredSubscription = async () => {
-  await prisma.user.updateMany({
-    where: {
-      plan: PLAN.PRO,
-      expiresAt: {
-        lt: new Date(),
-      },
-    },
-    data: {
-      plan: PLAN.FREE,
-      expiresAt: null,
-    },
-  });
 };
 
 const checkPaymentStatus = async (transactionId: string) => {
@@ -135,8 +228,58 @@ const checkPaymentStatus = async (transactionId: string) => {
   };
 };
 
+const cancelSubscription = async (userId: string) => {
+  try {
+    const subscription = await prisma.subscription.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    await stripe.subscriptions.update(subscription?.stripeSubscriptionId!, {
+      cancel_at_period_end: true,
+    });
+
+    await prisma.subscription.update({
+      where: {
+        userId,
+      },
+      data: {
+        cancelAtPeriodEnd: true,
+        cancelAt: new Date(),
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const paymentHistory = async (userId: string) => {
+  try {
+    const data = await prisma.payment.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        invoiceUrl: true,
+      },
+      take: 3,
+    });
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const paymentServices = {
   stripeWebhook,
-  expiredSubscription,
   checkPaymentStatus,
+  cancelSubscription,
+  paymentHistory,
 };

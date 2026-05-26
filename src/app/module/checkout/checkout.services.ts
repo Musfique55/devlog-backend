@@ -13,37 +13,30 @@ const createCheckoutSession = async (user: IRequestUser) => {
     );
   }
 
-
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
-    mode: "payment",
+    mode: "subscription",
+    customer: user.stripeCustomerId as string,
     line_items: [
       {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "DevLog Pro",
-            description: "Unlimited workspaces, team features, weekly reports",
-          },
-          unit_amount: 2000,
-        },
+        price: envVars.STRIPE.STRIPE_PRICE_ID,
         quantity: 1,
       },
     ],
-    metadata : {
-        userId : user.id,
-        email : user.email,
-        name : user.name
+    metadata: {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
     },
     success_url: `${envVars.FRONTEND_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${envVars.FRONTEND_URL}/payment/failed`,
   });
 
-  return { 
-    paymentUrl : session.url
-   };
+  return {
+    paymentUrl: session.url,
+  };
 };
 
 export const checkoutServices = {
-    createCheckoutSession
-}
+  createCheckoutSession,
+};

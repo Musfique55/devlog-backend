@@ -17,7 +17,6 @@ import { getWeekRange } from "./utils/getWeekRange";
 
 import { paymentController } from "./module/payment/payment.controller";
 import { envVars } from "./config/env";
-import { paymentServices } from "./module/payment/payment.services";
 import { PLAN } from "../generated/prisma/enums";
 
 dotenv.config();
@@ -27,9 +26,8 @@ const app = express();
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  paymentController.handleStripeWebhook
+  paymentController.handleStripeWebhook,
 );
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,12 +36,14 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 app.set("views", path.resolve(process.cwd(), "src/app/templates"));
 
-app.use(cors({
-  origin : [envVars.FRONTEND_URL || "http://localhost:3000"],
-  credentials : true,
-  methods : ["GET","POST","PUT","PATCH","DELETE"],
-  allowedHeaders : ["Content-Type","Authorization"],
-}));
+app.use(
+  cors({
+    origin: [envVars.FRONTEND_URL || "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 app.use("/api/auth", toNodeHandler(auth));
 
@@ -106,18 +106,12 @@ cron.schedule("0 9 * * 5", async () => {
   }
 });
 
-cron.schedule("59 23 * * *",async () => {
-  await paymentServices.expiredSubscription();
-})
-
-app.get("/", async(req, res) => {
+app.get("/", async (req, res) => {
   res.status(200).json({
-    message : "server is running",
-    success : true
-  })
+    message: "server is running",
+    success: true,
+  });
 });
-
-
 
 app.use("/api/v1", indexRoutes);
 

@@ -6,7 +6,7 @@ import { prisma } from "../../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import { envVars } from "../../config/env";
 import { JwtPayload } from "jsonwebtoken";
-import { TEAM_ROLE } from "../../../generated/prisma/enums";
+import { stripe } from "../../config/stripe.config";
 
 const loginUser = async (payload: { email: string; password: string }) => {
   try {
@@ -17,7 +17,6 @@ const loginUser = async (payload: { email: string; password: string }) => {
         password,
       },
     });
-
 
     if (!data) {
       throw new AppError("User login failed", status.UNAUTHORIZED);
@@ -30,7 +29,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
       );
     }
 
-    if(data.user.isDeleted){
+    if (data.user.isDeleted) {
       throw new AppError(
         "Your account has been deleted. Please contact support.",
         status.FORBIDDEN,
@@ -88,6 +87,24 @@ const registerUser = async (payload: {
     if (!data.user) {
       throw new AppError("User registration failed", status.BAD_REQUEST);
     }
+
+    const clock = await stripe.testHelpers.testClocks.create({
+      frozen_time: Math.floor(Date.now() / 1000),
+    });
+
+    const customer = await stripe.customers.create({
+      email: data.user.email,
+      test_clock: clock.id,
+    });
+
+    await prisma.user.update({
+      where: {
+        id: data.user.id,
+      },
+      data: {
+        stripeCustomerId: customer.id,
+      },
+    });
 
     if (inviteToken) {
       await prisma.user.update({
@@ -198,8 +215,6 @@ const logoutUser = async (sessionToken: string) => {
   return result;
 };
 
-
-
 const updateEmailVerification = async (userId: string) => {
   try {
     await prisma.user.update({
@@ -220,5 +235,5 @@ export const authService = {
   registerUser,
   getNewTokens,
   logoutUser,
-  updateEmailVerification
+  updateEmailVerification,
 };

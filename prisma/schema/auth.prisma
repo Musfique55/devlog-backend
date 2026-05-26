@@ -1,34 +1,35 @@
 model User {
-  id            String    @id
-  name          String
-  email         String   
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          APP_ROLE   @default(USER)
-  plan          PLAN       @default(FREE)
+  id               String   @id
+  name             String
+  email            String
+  emailVerified    Boolean  @default(false)
+  image            String?
+  role             APP_ROLE @default(USER)
+  plan             PLAN     @default(FREE)
+  stripeCustomerId String?  @unique
 
   lastLogDate   DateTime?
-  currentStreak   Int       @default(0)
-  longestStreak   Int       @default(0)
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
 
-  isDeleted     Boolean     @default(false)
-  deletedAt     DateTime?
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
 
-
-  isBlocked     Boolean     @default(false)
+  isBlocked     Boolean   @default(false)
   blockedReason String?
   blockedAt     DateTime?
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  expiresAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime?
 
-  sessions      Session[]
-  accounts      Account[]
-  workspaces   Workspace[] 
-  workspaceMembers       WorkspaceMember[]
-  standupLogs    StandupLogs[]
-  payments       Payment[]
+  sessions         Session[]
+  accounts         Account[]
+  workspaces       Workspace[]
+  workspaceMembers WorkspaceMember[]
+  standupLogs      StandupLogs[]
+  payments         Payment[]
+  subscriptions    Subscription[]
 
   @@unique([email])
   @@map("user")
@@ -81,7 +82,6 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
-
 
 enum APP_ROLE {
   USER

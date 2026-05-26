@@ -6,7 +6,18 @@ import { paymentController } from "../payment/payment.controller";
 
 const router = Router();
 
-router.post("/create-checkout-session",checkAuth(APP_ROLE.USER),checkoutController.createCheckoutSession);
-router.get("/:transactionId",paymentController.checkPaymentStatus)
+router.get("/", checkAuth(APP_ROLE.USER), paymentController.paymentHistory);
+router.get("/:transactionId", paymentController.checkPaymentStatus);
+
+router.post(
+  "/create-checkout-session",
+  checkAuth(APP_ROLE.USER),
+  checkoutController.createCheckoutSession,
+);
+router.patch(
+  "/cancel-subscription",
+  checkAuth(APP_ROLE.USER),
+  paymentController.cancelUserSubscription,
+);
 
 export const checkoutRoutes = router;

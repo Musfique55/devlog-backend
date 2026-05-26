@@ -33,7 +33,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
       message: "webhook event processed successfully",
       data: result,
     });
-  } catch (error : any) {
+  } catch (error: any) {
     res.status(status.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message,
@@ -53,10 +53,35 @@ const checkPaymentStatus = catchAsync(async (req: Request, res: Response) => {
     message: "payment status checked successfully",
     data: result,
   });
-})
+});
+
+const cancelUserSubscription = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    await paymentServices.cancelSubscription(userId as string);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: status.OK,
+      message: "subscription cancelled successfully",
+    });
+  },
+);
+
+const paymentHistory = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id as string;
+  const data = await paymentServices.paymentHistory(userId);
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "invoices fetched successfully",
+    data,
+  });
+});
 
 export const paymentController = {
   handleStripeWebhook,
-  checkPaymentStatus
+  checkPaymentStatus,
+  cancelUserSubscription,
+  paymentHistory,
 };
-

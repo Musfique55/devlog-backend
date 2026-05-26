@@ -15,6 +15,7 @@ export interface IRequestUser {
   role: APP_ROLE;
   plan: string;
   isBlocked: boolean;
+  stripeCustomerId: string | null;
 }
 
 declare global {
@@ -23,11 +24,12 @@ declare global {
       user?: {
         id: string;
         name: string;
-        emailVerified : boolean;
+        emailVerified: boolean;
         email: string;
         role: APP_ROLE;
         plan: string;
         isBlocked: boolean;
+        stripeCustomerId: string | null;
       };
     }
   }
@@ -36,8 +38,7 @@ declare global {
 export const checkAuth = (...roles: APP_ROLE[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const sessionToken =
-      req.cookies["better-auth.session_token"] 
-      ||
+      req.cookies["better-auth.session_token"] ||
       req.cookies["__Secure-better-auth.session_token"];
 
     if (!sessionToken) {
@@ -46,7 +47,6 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
         status.UNAUTHORIZED,
       );
     }
-    
 
     const session = await prisma.session.findFirstOrThrow({
       where: {
@@ -57,7 +57,12 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
       },
     });
 
-    if (session && session.user && !session.user.isBlocked && !session.user.isDeleted) {
+    if (
+      session &&
+      session.user &&
+      !session.user.isBlocked &&
+      !session.user.isDeleted
+    ) {
       const user = session.user;
 
       const now = new Date();
@@ -111,6 +116,7 @@ export const checkAuth = (...roles: APP_ROLE[]) => {
       emailVerified: session.user.emailVerified,
       plan: session.user.plan,
       isBlocked: session.user.isBlocked,
+      stripeCustomerId: session.user.stripeCustomerId,
     };
     next();
   };

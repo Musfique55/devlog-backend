@@ -3,8 +3,8 @@ model Payment {
     amount             Int           @default(0)
     userId             String
     user               User          @relation(fields: [userId], references: [id])
-    transactionId      String        
-    stripeEventId      String?
+    transactionId      String        @unique
+    stripeEventId      String?       @unique
     invoiceUrl         String?
     status             PaymentStatus @default(PENDING)
     paymentGatewayData Json?
@@ -12,8 +12,6 @@ model Payment {
     updatedAt          DateTime      @updatedAt
 
     @@map("payment")
-    @@unique([transactionId])
-
 }
 
 enum PaymentStatus {

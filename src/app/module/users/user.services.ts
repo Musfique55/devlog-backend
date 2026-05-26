@@ -126,6 +126,22 @@ const getMe = async (userId: string) => {
             isDeleted: true,
           },
         },
+        subscriptions: {
+          where: {
+            userId: userId,
+            status: "ACTIVE",
+          },
+          select: {
+            cancelAtPeriodEnd: true,
+            status: true,
+            cancelAt: true,
+            currentPeriodEnd: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+        },
       },
     });
 
@@ -145,19 +161,19 @@ const deleteAccount = async (userId: string) => {
       where: {
         id: userId,
       },
-      include : {
-        workspaces : {
-          select : {
-            id : true,
-            adminId : true,
-            members : {
-              where : {
-                role : TEAM_ROLE.MEMBER
-              }
-            }
-          }
-        }
-      }
+      include: {
+        workspaces: {
+          select: {
+            id: true,
+            adminId: true,
+            members: {
+              where: {
+                role: TEAM_ROLE.MEMBER,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) {
