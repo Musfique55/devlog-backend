@@ -1,4 +1,6 @@
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
@@ -22,6 +24,14 @@ import { PLAN } from "../generated/prisma/enums";
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: [envVars.FRONTEND_URL || "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+});
 
 app.post(
   "/webhook",
@@ -118,4 +128,5 @@ app.use("/api/v1", indexRoutes);
 app.use(globalErrorHandler);
 app.use(notFound);
 
+export { app, io, server };
 export default app;

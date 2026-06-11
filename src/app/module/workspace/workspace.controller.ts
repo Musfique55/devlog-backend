@@ -9,7 +9,6 @@ import crypto from "crypto";
 import { IQueryParams } from "../../types/queryBuilder.types";
 import { IRequestUser } from "../../middleware/checkAuth";
 
-
 const createWorkspace = catchAsync(async (req: Request, res: Response) => {
   const { name } = req.body;
   const id = req.user!.id;
@@ -44,7 +43,10 @@ const inviteMember = catchAsync(async (req: Request, res: Response) => {
 
 const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
   const { workspaceId } = req.params;
-  const data = await workspaceService.getWorkSpaceById(workspaceId as string,req.user as IRequestUser);
+  const data = await workspaceService.getWorkSpaceById(
+    workspaceId as string,
+    req.user as IRequestUser,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace fetched successfully",
@@ -54,25 +56,30 @@ const getWorkSpaceById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getWorkspaceMembers = catchAsync(async (req: Request, res: Response) => {
-  const {workspaceId} = req.params;
-  const result = await workspaceService.getWorkspaceMembers(workspaceId as string,req.query as IQueryParams);
+  const { workspaceId } = req.params;
+  const result = await workspaceService.getWorkspaceMembers(
+    workspaceId as string,
+    req.query as IQueryParams,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace members fetched successfully",
     success: true,
-    data: result
-  })
-})
+    data: result,
+  });
+});
 
 const getWorkspaceStats = catchAsync(async (req: Request, res: Response) => {
-  const result = await workspaceService.getWorkspaceStats(req.params.workspaceId as string);
+  const result = await workspaceService.getWorkspaceStats(
+    req.params.workspaceId as string,
+  );
   sendResponse(res, {
     statusCode: status.OK,
     message: "workspace stats fetched successfully",
     success: true,
-    data: result
+    data: result,
   });
-})
+});
 
 const getAllWorkSpaces = catchAsync(async (req: Request, res: Response) => {
   const id = req.user!.id;
@@ -156,16 +163,18 @@ const updateWorkSpace = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const removeMemberFromWorkspace = catchAsync(async (req : Request, res : Response) => {
-  const workspaceId = req.params.workspaceId as string;
-  const memberId = req.body.memberId as string;
-   await workspaceService.removeMemberFromWorkspace(workspaceId,memberId);
-  sendResponse(res, {
-    statusCode: status.OK,
-    message: "member removed successfully",
-    success: true,
-  })
- })
+const removeMemberFromWorkspace = catchAsync(
+  async (req: Request, res: Response) => {
+    const workspaceId = req.params.workspaceId as string;
+    const memberId = req.body.memberId as string;
+    await workspaceService.removeMemberFromWorkspace(workspaceId, memberId);
+    sendResponse(res, {
+      statusCode: status.OK,
+      message: "member removed successfully",
+      success: true,
+    });
+  },
+);
 
 export const workspaceController = {
   createWorkspace,
@@ -178,5 +187,5 @@ export const workspaceController = {
   getUsersOverallWorkspaceStats,
   getWorkspaceMembers,
   getWorkspaceStats,
-  removeMemberFromWorkspace
+  removeMemberFromWorkspace,
 };

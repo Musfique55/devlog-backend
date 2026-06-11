@@ -13,6 +13,7 @@ import { sendEmail } from "../../utils/sendEmail";
 import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
 import { IRequestUser } from "../../middleware/checkAuth";
 import { envVars } from "../../config/env";
+import { io } from "../../app";
 
 const updateStreak = async (userId: string) => {
   try {
@@ -82,12 +83,10 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         status.FORBIDDEN,
       );
     } else {
-        
       if (user.lastLogDate && !payload.workspaceId) {
         if (
           new Date(user.lastLogDate).toDateString() ===
           new Date().toDateString()
-          
         ) {
           throw new AppError(
             "You have already logged today",
@@ -165,6 +164,14 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         },
       },
     });
+
+    if (result.blocker && result.workspaceId) {
+      io.to(result.workspaceId).emit("newBlocker", {
+        message: "New blocker received",
+        success: true,
+        data: `${result.user.name} has added a new blocker`,
+      });
+    }
 
     if (
       result.blocker &&

@@ -1,13 +1,13 @@
-import app from "./app";
+import { server } from "./app";
 import { envVars } from "./config/env";
 import { prisma } from "../lib/prisma";
 
 const PORT = envVars.PORT || 5000;
 
-const server = async () => {
+const startServer = async () => {
   try {
     await prisma.$connect();
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
@@ -17,4 +17,4 @@ const server = async () => {
   }
 };
 
-server();
+startServer();
