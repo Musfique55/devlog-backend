@@ -14,9 +14,7 @@ interface envVars {
     ADMIN_PASSWORD: string;
   };
   EMAIL_SENDER_SMTP_USER: string;
-  EMAIL_SENDER_SMTP_PASSWORD: string;
-  EMAIL_SENDER_SMTP_HOST: string;
-  EMAIL_SENDER_SMTP_PORT: string;
+  BREVO_API_KEY: string;
   CLOUDINARY: {
     CLOUDINARY_CLOUD_NAME: string;
     CLOUDINARY_API_KEY: string;
@@ -44,15 +42,13 @@ const loadEnvs = () => {
     "ADMIN_EMAIL",
     "ADMIN_PASSWORD",
     "EMAIL_SENDER_SMTP_USER",
-    "EMAIL_SENDER_SMTP_PASSWORD",
-    "EMAIL_SENDER_SMTP_HOST",
-    "EMAIL_SENDER_SMTP_PORT",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
     "STRIPE_PRICE_ID",
+    "BREVO_API_KEY",
   ];
 
   envs.forEach((env) => {
@@ -71,16 +67,13 @@ const loadEnvs = () => {
     ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
     REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
     JWT_SECRET: process.env.JWT_SECRET as string,
+    BREVO_API_KEY: process.env.BREVO_API_KEY as string,
     ADMIN: {
       ADMIN_USERNAME: process.env.ADMIN_USERNAME as string,
       ADMIN_EMAIL: process.env.ADMIN_EMAIL as string,
       ADMIN_PASSWORD: process.env.ADMIN_PASSWORD as string,
     },
     EMAIL_SENDER_SMTP_USER: process.env.EMAIL_SENDER_SMTP_USER as string,
-    EMAIL_SENDER_SMTP_PASSWORD: process.env
-      .EMAIL_SENDER_SMTP_PASSWORD as string,
-    EMAIL_SENDER_SMTP_HOST: process.env.EMAIL_SENDER_SMTP_HOST as string,
-    EMAIL_SENDER_SMTP_PORT: process.env.EMAIL_SENDER_SMTP_PORT as string,
     CLOUDINARY: {
       CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
       CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,

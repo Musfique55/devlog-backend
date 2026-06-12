@@ -13,7 +13,7 @@ import { sendEmail } from "../../utils/sendEmail";
 import { ICreateLogs, IUpdateLogs } from "./standupLogs.types";
 import { IRequestUser } from "../../middleware/checkAuth";
 import { envVars } from "../../config/env";
-import { io } from "../../app";
+import { getIo } from "../../utils/socket";
 
 const updateStreak = async (userId: string) => {
   try {
@@ -166,7 +166,8 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
     });
 
     if (result.blocker && result.workspaceId) {
-      io.to(result.workspaceId).emit("newBlocker", {
+      const io = getIo();
+      io.to(result.workspaceId).emit("New_Blocker", {
         message: "New blocker received",
         success: true,
         data: `${result.user.name} has added a new blocker`,

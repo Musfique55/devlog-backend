@@ -1,6 +1,5 @@
 import express from "express";
 import http from "http";
-import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
@@ -20,17 +19,18 @@ import { getWeekRange } from "./utils/getWeekRange";
 import { paymentController } from "./module/payment/payment.controller";
 import { envVars } from "./config/env";
 import { PLAN } from "../generated/prisma/enums";
+import { initSocket } from "./utils/socket";
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: [envVars.FRONTEND_URL || "http://localhost:3000"],
-    credentials: true,
-    methods: ["GET", "POST"],
-  },
+
+const io = initSocket(server, {
+  origin: [envVars.FRONTEND_URL || "http://localhost:3000"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 });
 
 app.post(
@@ -123,10 +123,28 @@ app.get("/", async (req, res) => {
   });
 });
 
+io.on("connection", (socket) => {
+  console.log("user connected", socket.id);
+
+  socket.on("join_workspace", (workspaceId: string) => {
+    socket.join(workspaceId);
+    console.log(`user ${socket.id} joined workspace ${workspaceId}`);
+  });
+
+  socket.on("leave_workspace", (workspaceId: string) => {
+    socket.leave(workspaceId);
+    console.log(`user ${socket.id} left workspace ${workspaceId}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("user disconnected", socket.id);
+  });
+});
+
 app.use("/api/v1", indexRoutes);
 
 app.use(globalErrorHandler);
 app.use(notFound);
 
-export { app, io, server };
+export { app, server };
 export default app;
