@@ -32,7 +32,6 @@ export const sendEmail = async (options: SendEmailOptions) => {
 
     return { success: info.messageId };
   } catch (error: any) {
-    console.log(error);
     throw new AppError(error.message, 500);
   }
 };

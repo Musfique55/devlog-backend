@@ -5,7 +5,6 @@ import { sendResponse } from "../../shared/sendResponse";
 
 const acceptInvite = catchAsync(async (req: Request, res: Response) => {
   const { token } = req.params;
-  console.log(token);
   const result = await inviteServices.acceptInvite(token as string);
   if (result?.redirect) {
     sendResponse(res, {

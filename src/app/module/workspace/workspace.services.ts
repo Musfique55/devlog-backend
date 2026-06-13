@@ -104,18 +104,18 @@ const inviteMember = async (
     });
 
     if (response) {
-      await sendEmail({
-        subject: "Invitation Link",
-        to: email,
-        templateName: "invite",
-        templateData: {
-          adminName: response.workspace.admin.name,
-          workspaceName: response.workspace.name,
-          inviteUrl,
-          inviteeEmail: email,
-          token,
-        },
-      });
+      // await sendEmail({
+      //   subject: "Invitation Link",
+      //   to: email,
+      //   templateName: "invite",
+      //   templateData: {
+      //     adminName: response.workspace.admin.name,
+      //     workspaceName: response.workspace.name,
+      //     inviteUrl,
+      //     inviteeEmail: email,
+      //     token,
+      //   },
+      // });
     }
     return response;
   } catch (error) {

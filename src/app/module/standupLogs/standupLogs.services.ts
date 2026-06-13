@@ -171,37 +171,38 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
         message: "New blocker received",
         success: true,
         data: `${result.user.name} has added a new blocker`,
+        userId: result.userId,
       });
     }
 
-    if (
-      result.blocker &&
-      result.workspaceId &&
-      result.workSpace?.admin.plan === "PRO"
-    ) {
-      const mail = await sendEmail({
-        subject: "New Blocker",
-        to: result.workSpace!.admin.email,
-        templateName: "blocker",
-        templateData: {
-          date: new Date().toLocaleDateString(),
-          memberName: result.user.name,
-          workspaceName: result.workSpace!.name,
-          blocker: result.blocker,
-          blockerImageUrl: result?.blockerUrl,
-          todayWork: result.todayWork,
-          tomorrowWork: result.tomorrowWork,
-        },
-      });
+    // if (
+    //   result.blocker &&
+    //   result.workspaceId &&
+    //   result.workSpace?.admin.plan === "PRO"
+    // ) {
+    //   const mail = await sendEmail({
+    //     subject: "New Blocker",
+    //     to: result.workSpace!.admin.email,
+    //     templateName: "blocker",
+    //     templateData: {
+    //       date: new Date().toLocaleDateString(),
+    //       memberName: result.user.name,
+    //       workspaceName: result.workSpace!.name,
+    //       blocker: result.blocker,
+    //       blockerImageUrl: result?.blockerUrl,
+    //       todayWork: result.todayWork,
+    //       tomorrowWork: result.tomorrowWork,
+    //     },
+    //   });
 
-      if (!mail.success) {
-        await prisma.standupLogs.delete({
-          where: {
-            id: result.id,
-          },
-        });
-      }
-    }
+    //   if (!mail.success) {
+    //     await prisma.standupLogs.delete({
+    //       where: {
+    //         id: result.id,
+    //       },
+    //     });
+    //   }
+    // }
 
     if (!result.workspaceId) {
       await updateStreak(userId);
@@ -586,20 +587,20 @@ const updateBlockerStatus = async (logId: string, admin: IRequestUser) => {
       },
     });
 
-    await sendEmail({
-      subject: "Blocker Resolved",
-      to: log.user.id,
-      templateName: "blocker-resolved",
-      templateData: {
-        date: new Date().toLocaleDateString(),
-        memberName: data.user.name,
-        blocker: data.blocker,
-        adminName: admin.name,
-        workspaceName: data.workSpace!.name,
-        resolvedAt: data.blockerResolvedAt?.toLocaleDateString(),
-        dashboardUrl: `${envVars.FRONTEND_URL}/dashboard`,
-      },
-    });
+    // await sendEmail({
+    //   subject: "Blocker Resolved",
+    //   to: log.user.id,
+    //   templateName: "blocker-resolved",
+    //   templateData: {
+    //     date: new Date().toLocaleDateString(),
+    //     memberName: data.user.name,
+    //     blocker: data.blocker,
+    //     adminName: admin.name,
+    //     workspaceName: data.workSpace!.name,
+    //     resolvedAt: data.blockerResolvedAt?.toLocaleDateString(),
+    //     dashboardUrl: `${envVars.FRONTEND_URL}/dashboard`,
+    //   },
+    // });
   } catch (error) {
     throw error;
   }

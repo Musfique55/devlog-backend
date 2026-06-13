@@ -125,22 +125,22 @@ const stripeWebhook = async (event: Stripe.Event) => {
         });
 
         try {
-          await sendEmail({
-            to: user.email,
-            subject: "🎉 Welcome to DevLog Pro!",
-            templateName: "payment-success",
-            templateData: {
-              name: user.name,
-              transactionId: invoice.id,
-              date: new Date().toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              }),
-              amount: (invoice.amount_paid! / 100).toFixed(2), // "20.00"
-              dashboardUrl: `${envVars.FRONTEND_URL}/dashboard`,
-            },
-          });
+          // await sendEmail({
+          //   to: user.email,
+          //   subject: "🎉 Welcome to DevLog Pro!",
+          //   templateName: "payment-success",
+          //   templateData: {
+          //     name: user.name,
+          //     transactionId: invoice.id,
+          //     date: new Date().toLocaleDateString("en-US", {
+          //       month: "long",
+          //       day: "numeric",
+          //       year: "numeric",
+          //     }),
+          //     amount: (invoice.amount_paid! / 100).toFixed(2), // "20.00"
+          //     dashboardUrl: `${envVars.FRONTEND_URL}/dashboard`,
+          //   },
+          // });
         } catch (error) {
           console.log("email sending error", error);
         }

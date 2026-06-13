@@ -61,60 +61,60 @@ cron.schedule("0 0 * * *", async () => {
   await inviteServices.updateExpiredTokens();
 });
 
-cron.schedule("0 9 * * 5", async () => {
-  const workspaces = await prisma.workspace.findMany({
-    where: {
-      isDeleted: false,
-      isActive: true,
-      admin: {
-        isBlocked: false,
-        plan: PLAN.PRO,
-      },
-    },
-    include: {
-      admin: true,
-      members: {
-        include: {
-          user: true,
-        },
-      },
-      logs: true,
-    },
-  });
-
-  for (const workspace of workspaces) {
-    await sendEmail({
-      to: workspace.admin.email,
-      subject: `Weekly Standup Report for ${workspace.name}`,
-      templateName: "weekly-report",
-      templateData: {
-        workspaceName: workspace.name,
-        members: workspace.members
-          .filter((member) => member.userId !== workspace.adminId)
-          .map((member) => ({
-            name: member.user.name,
-            logCount: workspace.logs.filter(
-              (log) => log.userId === member.userId,
-            ).length,
-          })),
-        totalMembers: workspace.members.length,
-        weekRange: getWeekRange(),
-        totalLogs: await StandupLogServices.standupLogCount(workspace.adminId),
-        totalBlockers: workspace.logs.filter((log) => log.blocker).length,
-        blockers: workspace.logs
-          .filter((log) => log.blocker)
-          .map((log) => ({
-            memberName: workspace.members.find(
-              (member) => member.userId === log.userId,
-            )?.user.name,
-            date: log.createdAt.toDateString(),
-            text: log.blocker,
-          })),
-        workspaceUrl: `${process.env.FRONTEND_URL}/workspace/${workspace.id}`,
-      },
-    });
-  }
-});
+// cron.schedule("0 9 * * 5", async () => {
+//   const workspaces = await prisma.workspace.findMany({
+//     where: {
+//       isDeleted: false,
+//       isActive: true,
+//       admin: {
+//         isBlocked: false,
+//         plan: PLAN.PRO,
+//       },
+//     },
+//     include: {
+//       admin: true,
+//       members: {
+//         include: {
+//           user: true,
+//         },
+//       },
+//       logs: true,
+//     },
+//   });
+//
+//   for (const workspace of workspaces) {
+//     await sendEmail({
+//       to: workspace.admin.email,
+//       subject: `Weekly Standup Report for ${workspace.name}`,
+//       templateName: "weekly-report",
+//       templateData: {
+//         workspaceName: workspace.name,
+//         members: workspace.members
+//           .filter((member) => member.userId !== workspace.adminId)
+//           .map((member) => ({
+//             name: member.user.name,
+//             logCount: workspace.logs.filter(
+//               (log) => log.userId === member.userId,
+//             ).length,
+//           })),
+//         totalMembers: workspace.members.length,
+//         weekRange: getWeekRange(),
+//         totalLogs: await StandupLogServices.standupLogCount(workspace.adminId),
+//         totalBlockers: workspace.logs.filter((log) => log.blocker).length,
+//         blockers: workspace.logs
+//           .filter((log) => log.blocker)
+//           .map((log) => ({
+//             memberName: workspace.members.find(
+//               (member) => member.userId === log.userId,
+//             )?.user.name,
+//             date: log.createdAt.toDateString(),
+//             text: log.blocker,
+//           })),
+//         workspaceUrl: `${process.env.FRONTEND_URL}/workspace/${workspace.id}`,
+//       },
+//     });
+//   }
+// });
 
 app.get("/", async (req, res) => {
   res.status(200).json({
@@ -124,20 +124,18 @@ app.get("/", async (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("user connected", socket.id);
-
   socket.on("join_workspace", (workspaceId: string) => {
     socket.join(workspaceId);
-    console.log(`user ${socket.id} joined workspace ${workspaceId}`);
+    // console.log(`user ${socket.id} joined workspace ${workspaceId}`);
   });
 
   socket.on("leave_workspace", (workspaceId: string) => {
     socket.leave(workspaceId);
-    console.log(`user ${socket.id} left workspace ${workspaceId}`);
+    // console.log(`user ${socket.id} left workspace ${workspaceId}`);
   });
 
   socket.on("disconnect", () => {
-    console.log("user disconnected", socket.id);
+    // console.log("user disconnected", socket.id);
   });
 });
 

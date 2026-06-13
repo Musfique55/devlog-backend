@@ -17,55 +17,55 @@ export const auth = betterAuth({
   secret: envVars.BETTER_AUTH_SECRET!,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
   },
-  emailVerification: {
-    sendOnSignUp: true,
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      const invitedUser = await prisma.invite.findFirst({
-        where: {
-          email: user.email,
-          status: InviteStatus.PENDING,
-        },
-      });
+  // emailVerification: {
+  //   sendOnSignUp: true,
+  //   autoSignInAfterVerification: true,
+  //   sendVerificationEmail: async ({ user, url }) => {
+  //     const invitedUser = await prisma.invite.findFirst({
+  //       where: {
+  //         email: user.email,
+  //         status: InviteStatus.PENDING,
+  //       },
+  //     });
 
-      if (invitedUser) return;
+  //     if (invitedUser) return;
 
-      await sendEmail({
-        to: user.email,
-        subject: "email verification link",
-        templateName: "emailVerify",
-        templateData: {
-          name: user.name,
-          verifyUrl: url.replace(
-            `${envVars.BETTER_AUTH_URL}/api/auth`,
-            `${envVars.FRONTEND_URL}/auth`),
-        },
-      });
-    },
-    // async afterEmailVerification(user,request) {
-    //   const thisUser = await prisma.user.findUniqueOrThrow({
-    //     where: {
-    //       email: user.email,
-    //     },
-    //   });
+  //     await sendEmail({
+  //       to: user.email,
+  //       subject: "email verification link",
+  //       templateName: "emailVerify",
+  //       templateData: {
+  //         name: user.name,
+  //         verifyUrl: url.replace(
+  //           `${envVars.BETTER_AUTH_URL}/api/auth`,
+  //           `${envVars.FRONTEND_URL}/auth`),
+  //       },
+  //     });
+  //   },
+  //   // async afterEmailVerification(user,request) {
+  //   //   const thisUser = await prisma.user.findUniqueOrThrow({
+  //   //     where: {
+  //   //       email: user.email,
+  //   //     },
+  //   //   });
 
-    //   const payloadForToken = {
-    //     userId: thisUser.id,
-    //     email: thisUser.email,
-    //     role: thisUser.role,
-    //     plan: thisUser.plan,
-    //     isBlocked: thisUser.isBlocked,
-    //     emailVerified: thisUser.emailVerified,
-    //   };
+  //   //   const payloadForToken = {
+  //   //     userId: thisUser.id,
+  //   //     email: thisUser.email,
+  //   //     role: thisUser.role,
+  //   //     plan: thisUser.plan,
+  //   //     isBlocked: thisUser.isBlocked,
+  //   //     emailVerified: thisUser.emailVerified,
+  //   //   };
 
-    //   const accessToken = tokenUtils.createAccessToken(payloadForToken);
-    //   const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
-      
-    //   request.
-    // },
-  },
+  //   //   const accessToken = tokenUtils.createAccessToken(payloadForToken);
+  //   //   const refreshToken = tokenUtils.createRefreshToken(payloadForToken);
+  //     
+  //   //   request.
+  //   // },
+  // },
   user: {
     additionalFields: {
       role: {

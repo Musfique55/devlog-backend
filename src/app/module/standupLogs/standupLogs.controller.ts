@@ -10,7 +10,6 @@ const createLog = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const payload = req.body;
   const result = await StandupLogServices.createLog(userId as string, payload);
-  console.log(result);
   sendResponse(res, {
     statusCode: status.CREATED,
     success: true,
@@ -131,7 +130,7 @@ const updateBlockerStatus = catchAsync(async (req: Request, res: Response) => {
     statusCode: status.OK,
     success: true,
     message: "Blocker status updated successfully",
-    data : result
+    data: result,
   });
 });
 
@@ -144,5 +143,5 @@ export const StandupLogController = {
   getLogsByWorkspaceId,
   getAllBlockerLogs,
   deleteLogFromWorkspace,
-  updateBlockerStatus
+  updateBlockerStatus,
 };

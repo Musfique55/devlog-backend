@@ -94,15 +94,15 @@ const updateExpiredTokens = async () => {
   });
 
   for(const user of expiredUsers){
-    await sendEmail({
-      subject: "Subscription Expired",
-      templateData: {
-        name : user.name,
-        upgradeUrl: `${envVars.FRONTEND_URL}/upgrade-plan`,
-      },
-      templateName: "subscription-expired",
-      to: user.email,
-    });
+    // await sendEmail({
+    //   subject: "Subscription Expired",
+    //   templateData: {
+    //     name : user.name,
+    //     upgradeUrl: `${envVars.FRONTEND_URL}/upgrade-plan`,
+    //   },
+    //   templateName: "subscription-expired",
+    //   to: user.email,
+    // });
   }
 
 };
