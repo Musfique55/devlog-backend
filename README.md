@@ -31,7 +31,7 @@ This is the backend REST API for DevLog. It handles:
 - Cloudinary image uploads for blocker screenshots and user avatar
 
 **Frontend Repo** → [devlog-frontend](https://github.com/Musfique55/devlog-frontend)  
-**Live API** → `[https://devlog-backend-ruddy.vercel.app/api/v1](https://devlog-frontend-two.vercel.app/)`
+**Live API** → `https://devlog-frontend-two.vercel.app`
 
 ---
 
