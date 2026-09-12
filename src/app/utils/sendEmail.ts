@@ -2,7 +2,7 @@ import { envVars } from "../config/env";
 import path from "path";
 import ejs from "ejs";
 import AppError from "../helper/AppError";
-import { BrevoClient } from "@getbrevo/brevo";
+import { Resend } from "resend";
 
 interface SendEmailOptions {
   to: string;
@@ -11,7 +11,7 @@ interface SendEmailOptions {
   templateData: Record<string, any>;
 }
 
-const brevoClient = new BrevoClient({ apiKey: envVars.BREVO_API_KEY });
+const resendClient = new Resend(envVars.RESEND_EMAIL_SECRET_KEY);
 
 export const sendEmail = async (options: SendEmailOptions) => {
   const { to, subject, templateName, templateData } = options;
@@ -23,14 +23,14 @@ export const sendEmail = async (options: SendEmailOptions) => {
 
     const template = await ejs.renderFile(templatePath, templateData);
 
-    const info = await brevoClient.transactionalEmails.sendTransacEmail({
-      sender: { name: "DevLog", email: envVars.EMAIL_SENDER_SMTP_USER },
-      to: [{ email: to }],
+    const info = await resendClient.emails.send({
+      from: envVars.RESEND_EMAIL!,
+      to: [to],
       subject,
-      htmlContent: template,
+      html: template,
     });
 
-    return { success: info.messageId };
+    return { success: info.data?.id ? true : false, messageId: info.data?.id };
   } catch (error: any) {
     throw new AppError(error.message, 500);
   }

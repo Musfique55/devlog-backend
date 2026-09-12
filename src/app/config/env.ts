@@ -13,8 +13,8 @@ interface envVars {
     ADMIN_EMAIL: string;
     ADMIN_PASSWORD: string;
   };
-  EMAIL_SENDER_SMTP_USER: string;
-  BREVO_API_KEY: string;
+  RESEND_EMAIL_SECRET_KEY: string;
+  RESEND_EMAIL: string;
   CLOUDINARY: {
     CLOUDINARY_CLOUD_NAME: string;
     CLOUDINARY_API_KEY: string;
@@ -41,14 +41,14 @@ const loadEnvs = () => {
     "ADMIN_USERNAME",
     "ADMIN_EMAIL",
     "ADMIN_PASSWORD",
-    "EMAIL_SENDER_SMTP_USER",
+    "RESEND_EMAIL_SECRET_KEY",
+    "RESEND_EMAIL",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
     "STRIPE_PRICE_ID",
-    "BREVO_API_KEY",
   ];
 
   envs.forEach((env) => {
@@ -67,13 +67,13 @@ const loadEnvs = () => {
     ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
     REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
     JWT_SECRET: process.env.JWT_SECRET as string,
-    BREVO_API_KEY: process.env.BREVO_API_KEY as string,
     ADMIN: {
       ADMIN_USERNAME: process.env.ADMIN_USERNAME as string,
       ADMIN_EMAIL: process.env.ADMIN_EMAIL as string,
       ADMIN_PASSWORD: process.env.ADMIN_PASSWORD as string,
     },
-    EMAIL_SENDER_SMTP_USER: process.env.EMAIL_SENDER_SMTP_USER as string,
+    RESEND_EMAIL_SECRET_KEY: process.env.RESEND_EMAIL_SECRET_KEY as string,
+    RESEND_EMAIL: process.env.RESEND_EMAIL as string,
     CLOUDINARY: {
       CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
       CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,

@@ -175,34 +175,34 @@ const createLog = async (userId: string, payload: ICreateLogs) => {
       });
     }
 
-    // if (
-    //   result.blocker &&
-    //   result.workspaceId &&
-    //   result.workSpace?.admin.plan === "PRO"
-    // ) {
-    //   const mail = await sendEmail({
-    //     subject: "New Blocker",
-    //     to: result.workSpace!.admin.email,
-    //     templateName: "blocker",
-    //     templateData: {
-    //       date: new Date().toLocaleDateString(),
-    //       memberName: result.user.name,
-    //       workspaceName: result.workSpace!.name,
-    //       blocker: result.blocker,
-    //       blockerImageUrl: result?.blockerUrl,
-    //       todayWork: result.todayWork,
-    //       tomorrowWork: result.tomorrowWork,
-    //     },
-    //   });
+    if (
+      result.blocker &&
+      result.workspaceId &&
+      result.workSpace?.admin.plan === "PRO"
+    ) {
+      const mail = await sendEmail({
+        subject: "New Blocker",
+        to: result.workSpace!.admin.email,
+        templateName: "blocker",
+        templateData: {
+          date: new Date().toLocaleDateString(),
+          memberName: result.user.name,
+          workspaceName: result.workSpace!.name,
+          blocker: result.blocker,
+          blockerImageUrl: result?.blockerUrl,
+          todayWork: result.todayWork,
+          tomorrowWork: result.tomorrowWork,
+        },
+      });
 
-    //   if (!mail.success) {
-    //     await prisma.standupLogs.delete({
-    //       where: {
-    //         id: result.id,
-    //       },
-    //     });
-    //   }
-    // }
+      if (!mail.success) {
+        await prisma.standupLogs.delete({
+          where: {
+            id: result.id,
+          },
+        });
+      }
+    }
 
     if (!result.workspaceId) {
       await updateStreak(userId);

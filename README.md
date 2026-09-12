@@ -137,10 +137,7 @@ STRIPE_SECRET_KEY=sk_test_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 
 # Email (SMTP sender)
-EMAIL_SENDER_SMTP_HOST=smtp.gmail.com
-EMAIL_SENDER_SMTP_PORT=587
-EMAIL_SENDER_SMTP_USER=your_email@gmail.com
-EMAIL_SENDER_SMTP_PASSWORD=your_app_password
+RESEND_EMAIL_SECRET_KEY=your-resend-api-key
 ```
 
 ---
